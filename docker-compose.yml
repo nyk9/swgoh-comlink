@@ -1,6 +1,6 @@
-x-env-keys: &env_key_vars
-  ACCESS_KEY: my-access-key
-  SECRET_KEY: my-secret-key
+x-env-keys: &env_key_vars {}
+  # ACCESS_KEY: my-access-key
+  # SECRET_KEY: my-secret-key
 
 x-client-url: &env_client_url
   CLIENT_URL: http://swgoh-comlink:3000
@@ -16,7 +16,7 @@ services:
       APP_NAME: swgoh-comlink-dev
       PORT: 3000
     ports:
-      - 5000:3000
+      - 5001:3000
     networks:
       - comlink
     healthcheck:
