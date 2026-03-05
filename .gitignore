@@ -49,3 +49,4 @@ coverage/
 
 # Player data (large JSON files)
 api-test/player-*.json
+gameData.json
