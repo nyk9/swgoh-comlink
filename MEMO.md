@@ -77,6 +77,53 @@
 
 ---
 
+## アドバイス精度問題（Phase 1 動作テスト後）
+
+### 問題
+
+手動テストでCLIは動作したが、アドバイス内容の精度が非常に悪かった。
+AIがゲーム一般論（「CLSチームを作れ」等）を回答しており、実際のプレイヤーの育成状況が全く反映されていなかった。
+
+### 根本原因
+
+**`rote-platoons.json` と `rote-special-missions.json` に実データが入力されていない（テンプレートのまま）**
+
+全ユニットIDが `"UNIT_ID_HERE"` のプレースホルダーのままのため、以下の連鎖が起きていた：
+
+1. `getAllRoteUnitIds()` が返すIDが `["UNIT_ID_HERE"]` のみ
+2. `filterUnitsByIds()` でRotE関連キャラを一切取得できない（フィルタ結果が空）
+3. AIに渡すプロンプトの「要件未達キャラ」が空 or 意味のない値になる
+4. AIが実データ不足を察知して一般論でハルシネーション回答
+
+AIのレスポンスに「提供いただいたデータではキャラクター育成が初期段階」「要件達成済み0」と出ていたのはこのため。
+
+### 対策方針（決定済み）
+
+**アプローチA: 手動JSONに実データを入力する**（根本解決）
+
+- `packages/core/data/rote-platoons.json` にRotE TBの小隊情報（キャラID + 必要レリックレベル）を入力する
+- `packages/core/data/rote-special-missions.json` にスペシャルミッション情報を入力する
+- ゲームアップデート時は手動で更新する運用（許容済み）
+
+### 次のアクション
+
+- [ ] RotE TB 各フェーズの小隊キャラ一覧と必要レリックレベルを調べてJSONに入力する（← 最優先）
+- [ ] RotE TB スペシャルミッションの編成情報を調べてJSONに入力する
+- [ ] 実データ入力後に再テストしてアドバイス精度を確認する
+
+### 補足: GPの追加（2025）
+
+- `galacticPower` は `rosterUnit` には存在しない（undefined）ことが判明
+- `profileStat` の `nameKey` から取得する方式に修正済み
+  - 総GP: `STAT_GALACTIC_POWER_ACQUIRED_NAME`
+  - キャラGP: `STAT_CHARACTER_GALACTIC_POWER_ACQUIRED_NAME`
+  - 艦隊GP: `STAT_SHIP_GALACTIC_POWER_ACQUIRED_NAME`
+- プロンプトに「総GP / キャラGP / 艦隊GP」の3値を追加済み
+- ただしGPだけ渡しても手動JSONが空のため、アドバイスは依然として一般論のまま
+- **根本解決は手動JSONへの実データ入力が必須**
+
+---
+
 ## ディレクトリ構成メモ
 
 ```
