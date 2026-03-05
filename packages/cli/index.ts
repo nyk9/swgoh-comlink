@@ -282,7 +282,6 @@ async function main(): Promise<void> {
   console.log(`   allyCode : ${allyCode}`);
   console.log(`   モード   : ${tbMode}`);
   console.log(`   プロバイダー: ${providerDisplayName} (${resolvedModelId})`);
-  console.log(`   APIキー  : 環境変数 ${apiKeyEnvVar} を使用`);
   console.log("─".repeat(50));
 
   // Step 1: プレイヤーデータ取得
