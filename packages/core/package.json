@@ -1,0 +1,27 @@
+{
+  "name": "@swgoh-advisor/core",
+  "version": "1.0.0",
+  "main": "./index.ts",
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "bun-types": "latest"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./comlink": "./comlink/index.ts",
+    "./advisor": "./advisor/index.ts",
+    "./data": "./data/index.ts"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "test": "bun test",
+    "lint": "tsc --noEmit"
+  },
+  "type": "module",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.58",
+    "@ai-sdk/google": "^3.0.43",
+    "ai": "^6.0.116"
+  }
+}

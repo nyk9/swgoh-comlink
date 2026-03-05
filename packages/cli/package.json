@@ -1,0 +1,23 @@
+{
+  "name": "@swgoh-advisor/cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "swgoh-advisor": "./index.ts"
+  },
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun run --watch index.ts",
+    "build": "bun build ./index.ts --outdir ./dist --target node",
+    "test": "bun test",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@swgoh-advisor/core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "bun-types": "latest"
+  }
+}
