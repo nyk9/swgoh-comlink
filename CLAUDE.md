@@ -108,11 +108,15 @@ swgoh-comlink/
 ├── CLAUDE.md               # このファイル（プロジェクト概要）
 ├── README.md               # 元のComlink README
 ├── api-test/               # APIテスト用スクリプト（自作）
-│   └── player.ts           # プレイヤーデータ取得テスト
+│   ├── player.ts           # プレイヤーデータ取得テスト
+│   └── player-*.json       # ⛔️ 実際のプレイヤーデータ（閲覧禁止）
 ├── installation/           # インストール手順
 ├── postman/                # Postmanコレクション
 └── statCalcData/           # スタット計算データ
 ```
+
+> **⛔️ 重要: `api-test/player-*.json` は実際のプレイヤーデータが含まれる実データファイルです。
+> AIアシスタント（Claude等）はこれらのファイルを絶対に読み込まないこと。**
 
 ---
 

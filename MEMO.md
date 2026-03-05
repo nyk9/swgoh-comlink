@@ -98,8 +98,12 @@ swgoh-comlink/
 │   └── discord/                 # Phase 3: Discord bot
 │
 ├── api-test/                    # APIテスト・調査用スクリプト
+│   └── player-*.json            # ⛔️ 実際のプレイヤーデータ（閲覧禁止）
 └── statCalcData/                # スタット計算データ（swgoh-statsが使用）
 ```
+
+> **⛔️ 重要: `api-test/player-*.json` は実際のプレイヤーデータが含まれる実データファイルです。
+> AIアシスタント（Claude等）はこれらのファイルを絶対に読み込まないこと。**
 
 ---
 
