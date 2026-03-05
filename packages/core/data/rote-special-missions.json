@@ -1,0 +1,69 @@
+{
+  "_comment": "RotE (Rise of the Empire) TB スペシャルミッション情報 - 手動管理ファイル。実際のゲームデータを元に手動で入力・更新する。",
+  "_lastUpdated": "YYYY-MM-DD",
+  "_schema": {
+    "phases[].phase": "フェーズ番号（1〜6）",
+    "phases[].zones[].zoneId": "ゾーンの識別子（任意の文字列）",
+    "phases[].zones[].zoneName": "ゾーン名（例: Dark Side / Light Side / Neutral）",
+    "phases[].zones[].specialMissions[].missionId": "ミッションの識別子（任意の文字列）",
+    "phases[].zones[].specialMissions[].missionName": "ミッション名（例: Special Mission 1）",
+    "phases[].zones[].specialMissions[].description": "ミッションの説明・備考",
+    "phases[].zones[].specialMissions[].squads[].squadId": "編成の識別子（同一ミッションに複数編成がある場合を考慮）",
+    "phases[].zones[].specialMissions[].squads[].squadName": "編成名（例: Squad A）",
+    "phases[].zones[].specialMissions[].squads[].units[].id": "ComlinkのユニットID（例: DARTHVADER）",
+    "phases[].zones[].specialMissions[].squads[].units[].requiredRelicLevel": "必要レリックレベル（0=レリック不要、1〜9）",
+    "phases[].zones[].specialMissions[].squads[].units[].isLeader": "リーダー指定かどうか（true/false）",
+    "phases[].zones[].specialMissions[].squads[].units[].note": "メモ（キャラの表示名など）"
+  },
+
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Phase 1",
+      "zones": [
+        {
+          "zoneId": "rote_p1_ds",
+          "zoneName": "Dark Side",
+          "specialMissions": [
+            {
+              "missionId": "rote_p1_ds_sm1",
+              "missionName": "Special Mission 1",
+              "description": "ミッションの説明をここに記入",
+              "squads": [
+                {
+                  "squadId": "rote_p1_ds_sm1_squad1",
+                  "squadName": "Squad A",
+                  "units": [
+                    { "id": "UNIT_ID_HERE", "requiredRelicLevel": 0, "isLeader": true, "note": "キャラ名" },
+                    { "id": "UNIT_ID_HERE", "requiredRelicLevel": 0, "isLeader": false, "note": "キャラ名" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "zoneId": "rote_p1_ls",
+          "zoneName": "Light Side",
+          "specialMissions": [
+            {
+              "missionId": "rote_p1_ls_sm1",
+              "missionName": "Special Mission 1",
+              "description": "ミッションの説明をここに記入",
+              "squads": [
+                {
+                  "squadId": "rote_p1_ls_sm1_squad1",
+                  "squadName": "Squad A",
+                  "units": [
+                    { "id": "UNIT_ID_HERE", "requiredRelicLevel": 0, "isLeader": true, "note": "キャラ名" },
+                    { "id": "UNIT_ID_HERE", "requiredRelicLevel": 0, "isLeader": false, "note": "キャラ名" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

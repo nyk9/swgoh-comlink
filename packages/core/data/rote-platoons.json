@@ -1,0 +1,49 @@
+{
+  "_comment": "RotE (Rise of the Empire) TB 小隊情報 - 手動管理ファイル。実際のゲームデータを元に手動で入力・更新する。",
+  "_lastUpdated": "YYYY-MM-DD",
+  "_schema": {
+    "phases[].phase": "フェーズ番号（1〜6）",
+    "phases[].zones[].zoneId": "ゾーンの識別子（任意の文字列）",
+    "phases[].zones[].zoneName": "ゾーン名（例: Dark Side / Light Side / Neutral）",
+    "phases[].zones[].platoons[].platoonId": "小隊の識別子（任意の文字列）",
+    "phases[].zones[].platoons[].platoonName": "小隊名（例: Platoon 1）",
+    "phases[].zones[].platoons[].units[].id": "ComlinkのユニットID（例: DARTHVADER）",
+    "phases[].zones[].platoons[].units[].requiredRelicLevel": "必要レリックレベル（0=レリック不要、1〜9）",
+    "phases[].zones[].platoons[].units[].note": "メモ（キャラの表示名など）"
+  },
+
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Phase 1",
+      "zones": [
+        {
+          "zoneId": "rote_p1_ds",
+          "zoneName": "Dark Side",
+          "platoons": [
+            {
+              "platoonId": "rote_p1_ds_platoon1",
+              "platoonName": "Platoon 1",
+              "units": [
+                { "id": "UNIT_ID_HERE", "requiredRelicLevel": 0, "note": "キャラ名" }
+              ]
+            }
+          ]
+        },
+        {
+          "zoneId": "rote_p1_ls",
+          "zoneName": "Light Side",
+          "platoons": [
+            {
+              "platoonId": "rote_p1_ls_platoon1",
+              "platoonName": "Platoon 1",
+              "units": [
+                { "id": "UNIT_ID_HERE", "requiredRelicLevel": 0, "note": "キャラ名" }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
