@@ -157,6 +157,7 @@ export function buildRoteTBPrompt(input: RoteTBPromptInput): string {
 - プレイヤー名: ${player.name}
 - アライコード: ${player.allyCode}
 - プレイヤーレベル: ${player.level}
+- 総GP: ${player.galacticPower.toLocaleString("ja-JP")}（キャラ: ${player.characterGalacticPower.toLocaleString("ja-JP")} / 艦隊: ${player.shipGalacticPower.toLocaleString("ja-JP")}）
 - ギルド: ${player.guildName || "（ギルド未加入）"}
 
 ## RotE TB 要件達成状況のサマリー

@@ -23,7 +23,7 @@ export type StarLevel = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 /**
  * レリック情報
  * currentTier: 実際のレリックレベルは (currentTier - 2) となる
- * 例: currentTier=5 → レリック3、currentTier=2 → レリック未解放
+ * 例: currentTier=5 -> レリック3、currentTier=2 -> レリック未解放
  */
 export interface ComlinkRelic {
   currentTier: number;
@@ -31,6 +31,7 @@ export interface ComlinkRelic {
 
 /**
  * ユニットデータ（キャラ・シップ共通）
+ * 注意: galacticPower は rosterUnit には含まれない（profileStat から取得する）
  */
 export interface ComlinkUnit {
   /** ユニットの定義ID（例: "DARTHVADER"） */
@@ -43,8 +44,6 @@ export interface ComlinkUnit {
   rarity: number;
   /** レリック情報（ギア13のキャラのみ存在） */
   relic?: ComlinkRelic;
-  /** ユニットが戦力（GP）に換算される値 */
-  galacticPower: string;
 }
 
 /**
@@ -70,7 +69,7 @@ export interface ComlinkPlayerResponse {
   guildName: string;
   /** 保有ユニット一覧（キャラ + シップ） */
   rosterUnit: ComlinkUnit[];
-  /** プレイヤー統計一覧 */
+  /** プレイヤー統計一覧（ゲーム内STATSスクリーンの値） */
   profileStat: ComlinkPlayerStat[];
 }
 
@@ -105,6 +104,12 @@ export interface FormattedPlayer {
   level: number;
   /** ギルド名 */
   guildName: string;
+  /** 総GP（profileStat の STAT_GALACTIC_POWER_ACQUIRED_NAME から取得） */
+  galacticPower: number;
+  /** キャラクターGP（profileStat の STAT_CHARACTER_GALACTIC_POWER_ACQUIRED_NAME から取得） */
+  characterGalacticPower: number;
+  /** 艦隊GP（profileStat の STAT_SHIP_GALACTIC_POWER_ACQUIRED_NAME から取得） */
+  shipGalacticPower: number;
   /** 整形済みユニット一覧（IDをキーにしたMap） */
   units: Map<string, FormattedUnit>;
 }

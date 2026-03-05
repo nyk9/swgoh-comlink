@@ -16,9 +16,9 @@ import type {
 
 /**
  * Comlinkのレリック currentTier とゲーム内レリックレベルのオフセット
- * currentTier=2 → レリック未解放（レリックレベル0扱い）
- * currentTier=3 → レリック1
- * currentTier=11 → レリック9
+ * currentTier=2 -> レリック未解放（レリックレベル0扱い）
+ * currentTier=3 -> レリック1
+ * currentTier=11 -> レリック9
  */
 const RELIC_TIER_OFFSET = 2;
 
@@ -28,6 +28,14 @@ const RELIC_TIER_OFFSET = 2;
  */
 const RELIC_TIER_UNLOCKED_THRESHOLD = 3;
 
+/**
+ * profileStat の nameKey 定数
+ * GP は rosterUnit には存在せず、profileStat から取得する
+ */
+const STAT_KEY_TOTAL_GP = "STAT_GALACTIC_POWER_ACQUIRED_NAME";
+const STAT_KEY_CHARACTER_GP = "STAT_CHARACTER_GALACTIC_POWER_ACQUIRED_NAME";
+const STAT_KEY_SHIP_GP = "STAT_SHIP_GALACTIC_POWER_ACQUIRED_NAME";
+
 // -------------------------------------------------------
 // ユニット整形
 // -------------------------------------------------------
@@ -36,9 +44,9 @@ const RELIC_TIER_UNLOCKED_THRESHOLD = 3;
  * ComlinkのユニットデータをFormattedUnitに変換する
  *
  * レリックレベルの計算:
- * - relic が存在しない場合 → 0
- * - relic.currentTier < RELIC_TIER_UNLOCKED_THRESHOLD の場合 → 0
- * - それ以外 → currentTier - RELIC_TIER_OFFSET
+ * - relic が存在しない場合 -> 0
+ * - relic.currentTier < RELIC_TIER_UNLOCKED_THRESHOLD の場合 -> 0
+ * - それ以外 -> currentTier - RELIC_TIER_OFFSET
  *
  * @param unit - Comlinkのユニットデータ
  * @returns 整形済みユニット情報
@@ -59,6 +67,26 @@ function formatUnit(unit: ComlinkUnit): FormattedUnit {
 }
 
 // -------------------------------------------------------
+// profileStat ユーティリティ
+// -------------------------------------------------------
+
+/**
+ * profileStat から指定した nameKey の値を数値で返す
+ * 該当する nameKey が存在しない場合は 0 を返す
+ *
+ * @param profileStat - プレイヤー統計情報の配列
+ * @param nameKey - 取得したい統計の nameKey
+ * @returns 統計値（数値）
+ */
+function getProfileStat(
+  profileStat: ComlinkPlayerResponse["profileStat"],
+  nameKey: string,
+): number {
+  const stat = profileStat.find((s) => s.nameKey === nameKey);
+  return stat != null ? parseInt(stat.value, 10) || 0 : 0;
+}
+
+// -------------------------------------------------------
 // プレイヤー整形
 // -------------------------------------------------------
 
@@ -68,6 +96,7 @@ function formatUnit(unit: ComlinkUnit): FormattedUnit {
  * - 全ユニットをMapに格納する（キー: definitionId）
  * - definitionId には ":SEVEN_STAR" などのサフィックスが付く場合があるため、
  *   コロンより前の部分をIDとして使用する
+ * - GP は profileStat から取得する（rosterUnit には存在しない）
  *
  * @param raw - Comlinkの生プレイヤーレスポンス
  * @returns 整形済みプレイヤー情報
@@ -76,8 +105,6 @@ export function formatPlayer(raw: ComlinkPlayerResponse): FormattedPlayer {
   const units = new Map<string, FormattedUnit>();
 
   for (const unit of raw.rosterUnit) {
-    // definitionId は "DARTHVADER:SEVEN_STAR" のような形式の場合がある
-    // コロンより前の部分をユニットIDとして使う
     const id = unit.definitionId.split(":")[0];
 
     if (id == null || id === "") {
@@ -88,11 +115,18 @@ export function formatPlayer(raw: ComlinkPlayerResponse): FormattedPlayer {
     units.set(id, formatted);
   }
 
+  const galacticPower = getProfileStat(raw.profileStat, STAT_KEY_TOTAL_GP);
+  const characterGalacticPower = getProfileStat(raw.profileStat, STAT_KEY_CHARACTER_GP);
+  const shipGalacticPower = getProfileStat(raw.profileStat, STAT_KEY_SHIP_GP);
+
   return {
     name: raw.name,
     allyCode: raw.allyCode,
     level: raw.level,
     guildName: raw.guildName,
+    galacticPower,
+    characterGalacticPower,
+    shipGalacticPower,
     units,
   };
 }
