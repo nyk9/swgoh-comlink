@@ -263,19 +263,6 @@ export async function execute(
     // 初回ユーザーメッセージ
     const initialUserMessage = buildInitialUserMessage(selection);
 
-    // [DEBUG] システムプロンプトを ephemeral で出力
-    if (showPrompt) {
-      const systemPrompt = buildSystemPrompt(systemPromptInput);
-      // コードブロックは使わずプレーンテキストで分割する
-      // （コードブロック内で分割するとDiscord側で閉じタグが欠けて表示が崩れるため）
-      const headerChunk = `## 🔍 [DEBUG] システムプロンプト`;
-      await interaction.followUp({ content: headerChunk });
-      const promptChunks = splitMessage(systemPrompt, 1900);
-      for (const chunk of promptChunks) {
-        await interaction.followUp({ content: chunk });
-      }
-    }
-
     // AIアドバイス取得
     const adviceText = await continueChat(
       {
@@ -336,6 +323,18 @@ export async function execute(
       { role: "user", content: initialUserMessage },
       { role: "assistant", content: adviceText },
     ]);
+
+    // [DEBUG] システムプロンプトをスレッド内に出力
+    if (showPrompt) {
+      const systemPrompt = buildSystemPrompt(systemPromptInput);
+      // コードブロックは使わずプレーンテキストで分割する
+      // （コードブロック内で分割するとDiscord側で閉じタグが欠けて表示が崩れるため）
+      await thread.send(`## 🔍 [DEBUG] システムプロンプト`);
+      const promptChunks = splitMessage(systemPrompt, 1900);
+      for (const chunk of promptChunks) {
+        await thread.send(chunk);
+      }
+    }
 
     await thread.send(
       [
