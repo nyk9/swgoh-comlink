@@ -1,0 +1,30 @@
+# 環境変数ファイル（docker-compose の env_file / environment で渡すため除外）
+.env
+.env.local
+.env.*.local
+
+# 依存関係（コンテナ内で bun install するため除外）
+node_modules
+**/node_modules
+
+# ビルド成果物
+dist
+**/dist
+
+# Git
+.git
+.gitignore
+
+# エディタ・OS
+.DS_Store
+*.swp
+*.swo
+
+# ログ
+*.log
+
+# テストデータ（実プレイヤーデータを含むため除外）
+api-test/
+
+# CI/CD
+.github/

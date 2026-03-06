@@ -6,6 +6,22 @@ x-client-url: &env_client_url
   CLIENT_URL: http://swgoh-comlink:3000
 
 services:
+  discord-bot:
+    container_name: swgoh-discord-bot
+    build:
+      context: .
+      dockerfile: packages/discord/Dockerfile
+    restart: always
+    depends_on:
+      swgoh-comlink:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      COMLINK_URL: http://swgoh-comlink:3000
+    networks:
+      - comlink
+
   swgoh-comlink:
     container_name: swgoh-comlink
     image: ghcr.io/swgoh-utils/swgoh-comlink:latest
