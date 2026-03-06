@@ -9,39 +9,40 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 
 ## ロードマップ
 
-### Phase 1: 個人用CLI（現在のフォーカス）
+### Phase 1: 個人用CLI ✅ 完了
 
 - `bun run cli` のみで起動し、**対話型チャット**でアドバイスを受ける
 - まずは **RotE（Rise of the Empire） TB特化** で実装する
-- 動くものを最速で作ることを優先する
-- **チャット形式のUXに全面改修済み**（下記「Phase 1 CLI チャット設計」参照）
+- **チャット形式のUXに全面改修済み**
 
-### Phase 2: Discord bot（個人サーバー試験用）
+### Phase 2: Discord bot（個人サーバー試験用）✅ 完了
 
 - まず自分のDiscordサーバーに導入して動作確認・改善を繰り返す
 - SWGoHギルドはほぼDiscordサーバーを持っているため相性が良い
 - Phase 2で安定したらギルドのDiscordに導入してもらう形での展開を想定（Phase 3へ）
 - **コマンド形式: スラッシュコマンド（`/advice` 等）**
 
-#### Phase 2 開発ステップ
+#### Phase 2 開発ステップ（全完了）
 
-**Step 1: コマンド認識の確認**
+**Step 1: コマンド認識の確認** ✅
 
-- Discord botをセットアップしてスラッシュコマンドを登録する
-- `/advice` コマンドを叩いたら固定の返事が返ってくることを確認する
-- 目的: Discordとの疎通・コマンド登録の仕組みを確認する
+- Discord botをセットアップしてスラッシュコマンドを登録
+- `/advice` コマンドを叩いたら固定の返事が返ってくることを確認
 
-**Step 2: Comlinkデータ取得の確認**
+**Step 2: Comlinkデータ取得の確認** ✅
 
-- `/advice allycode:445833733` でComlinkからデータを取得する
+- `/advice allycode:445833733` でComlinkからデータを取得
 - AIに渡す用に整形したデータ（GP上位30キャラ等）をチャットに返す
-- 目的: Comlink → Discord の一連のパイプラインを確認する
 
-**Step 3: AIアドバイスまでの確認**
+**Step 3: AIアドバイスまでの確認** ✅
 
-- モード・目的を引数で受け取り（例: `/advice allycode:445833733 mode:rote purpose:platoon`）
+- `mode` / `purpose` 引数を受け取り（例: `/advice allycode:445833733 mode:rote purpose:platoon`）
 - `core/advisor` を呼び出してAIのアドバイスをチャットに返す
-- 目的: CLI と同じ `core/` を Discord からも呼び出せることを確認する
+
+#### Phase 2 次のアクション
+
+- **スレッドでの会話継続対応**（現在は1回答えて終わり）
+  - `/advice` を叩いたらスレッドを自動作成し、そのスレッド内でチャットを継続できるようにする
 
 ### Phase 3: Web版（一般公開）
 
@@ -53,17 +54,17 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 ## アーキテクチャ概要
 
 ```
-[bun run cli で起動]
+[bun run cli で起動 / Discord /advice コマンド]
   ↓
-[アライコードを対話形式で入力（~/.swgoh-advisor/config.json に保存・再利用）]
+[アライコードを入力（CLI: config.json保存 / Discord: コマンド引数）]
   ↓
 [Comlinkでプレイヤーデータ取得 → GP上位30キャラ + 手動JSONデータを整形]
   ↓
 [モード選択（RotE TB / TW / GAC...）→ 目的選択（小隊/通常/スペシャル/GP上げ）]
   ↓
-[システムプロンプト組み立て → Claude APIに投げる]
+[システムプロンプト組み立て → AI APIに投げる]
   ↓
-[初回アドバイス表示 → 掘り下げチャット（/exit で終了）]
+[初回アドバイス表示 → 掘り下げチャット（CLI: /exit で終了 / Discord: スレッドで継続予定）]
 ```
 
 ---
@@ -75,7 +76,7 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 | プレイヤーのキャラ育成状況（レリック数等）           | Comlink `/player` endpoint                       |                                         |
 | スペシャルミッション・コンバットミッションの編成要件 | Comlink `territoryBattleDefinition` + `campaign` |                                         |
 | 小隊（Platoon）に必要なキャラ一覧                    | **手動JSON管理**                                 | サーバー側管理のためComlinkでは取得不可 |
-| アドバイス生成                                       | Claude API                                       |                                         |
+| アドバイス生成                                       | AI API（Google Gemini / Anthropic Claude）       |                                         |
 
 ---
 
@@ -124,6 +125,9 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 - **レートリミット**
   - Capital Gamesのポリシーに依存（概ね ~20 req/sec）
   - `/player` と `/playerArena` は ~100 req/sec
+- **ComlinkのAPIフィールド名に注意**
+  - スター数は `rarity` ではなく `currentRarity`
+  - GP は `rosterUnit` には存在しない → `profileStat` から取得する
 
 ---
 
@@ -135,7 +139,8 @@ swgoh-comlink/
 ├── MEMO.md                      # 会話メモ・決定事項ログ
 ├── README.md                    # 元のComlink README
 ├── PRIVACY-STATEMENT.md         # プライバシーポリシー
-├── docker-compose.yml           # Comlink起動用
+├── docker-compose.yml           # Comlink + Discord bot 起動用
+├── .dockerignore                # Dockerビルド除外設定
 │
 ├── packages/                    # 本番コード
 │   ├── core/                    # 共通ロジック（CLI・Web・Discord共通）
@@ -156,7 +161,7 @@ swgoh-comlink/
 │   │       ├── types.ts         # 型定義
 │   │       └── index.ts
 │   │
-│   ├── cli/                     # Phase 1: CLIアプリ（実装済み）
+│   ├── cli/                     # Phase 1: CLIアプリ ✅ 実装済み
 │   │   ├── index.ts             # エントリーポイント（bun run cli）
 │   │   ├── chat.ts              # 対話ループ本体
 │   │   ├── selector.ts          # 選択式UIユーティリティ
@@ -166,7 +171,15 @@ swgoh-comlink/
 │   │       ├── tw.ts            # TW（スケルトン）
 │   │       └── gac.ts           # GAC（スケルトン）
 │   │
-│   ├── discord/                 # Phase 2: Discord bot（未実装）
+│   ├── discord/                 # Phase 2: Discord bot ✅ 実装済み
+│   │   ├── index.ts             # エントリーポイント（bun run discord）
+│   │   ├── deploy-commands.ts   # スラッシュコマンド登録スクリプト
+│   │   ├── Dockerfile           # Discord bot コンテナ定義
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── commands/
+│   │       └── advice.ts        # /advice コマンド定義・ハンドラー
+│   │
 │   └── web/                     # Phase 3: Webアプリ（未実装）
 │
 ├── api-test/                    # APIテスト・調査用スクリプト
@@ -240,41 +253,53 @@ swgoh-comlink/
 - 将来的には「決定事項メモ管理」方式に移行予定
 ```
 
-### 実装済みファイル構成
+---
+
+## Phase 2 Discord bot 設計
+
+### コマンド仕様
 
 ```
-packages/
-├── core/
-│   ├── comlink/
-│   │   └── formatPlayer.ts     # getTopNUnits() 追加済み
-│   └── advisor/
-│       ├── prompt.ts           # チャット用システムプロンプト（buildSystemPrompt / buildInitialUserMessage）
-│       └── client.ts           # continueChat()・ChatMessage 型追加済み
-│
-└── cli/
-    ├── index.ts                # チャットループ起動に全面改修済み
-    ├── chat.ts                 # 対話ループ本体
-    ├── selector.ts             # 選択式UIユーティリティ
-    ├── config.ts               # ~/.swgoh-advisor/config.json 管理
-    └── modes/                  # モード別選択肢定義
-        ├── rote.ts             # RotE TB（小隊・通常・スペシャル・GP上げ）
-        ├── tw.ts               # TW（スケルトン）
-        └── gac.ts              # GAC（スケルトン）
+/advice allycode:<9桁> [mode:<rote|tw|gac>] [purpose:<platoon|combat_mission|special_mission|gp>]
 ```
 
-### 拡張性の設計方針
+- `allycode`: 必須。プレイヤーのアライコード
+- `mode`: 省略時はプレイヤーデータの表示のみ
+- `purpose`: `mode:rote` のときのみ有効。省略時は `platoon` がデフォルト
 
-- `modes/` 配下にファイルを1つ追加するだけで新モード対応
-- アライコード保存は `packages/cli/config.ts` に閉じ込め（`core/` には触らない）
-- 将来Bの「決定事項メモ管理」に移行する際は `client.ts` だけ変更すればOK
+### 動作フロー
+
+```
+① /advice コマンド受信
+  → interaction.deferReply()（処理中表示）
+
+② Comlinkからプレイヤーデータ取得・整形
+
+③ mode が指定されていない場合
+  → GP上位30キャラをテキスト表示して終了
+
+④ mode が指定されている場合
+  → core/advisor を呼び出してAIアドバイスを生成
+  → 2000文字超の場合はメッセージを分割して送信（editReply + followUp）
+
+⑤ （実装予定）スレッドを自動作成して会話継続できるようにする
+```
+
+### COMLINK_URL について
+
+- ローカル実行時: `http://localhost:5001`（デフォルト）
+- Docker コンテナ内: `COMLINK_URL=http://swgoh-comlink:3000`（環境変数で上書き）
 
 ---
 
-## 今後の次のアクション（Phase 1）
+## 今後の次のアクション
 
-1. ~~**CLIチャット形式への改修**~~ ✅ 完了
-2. ~~**GP上位30キャラ抽出**~~ ✅ 完了
-3. **手動JSONへの実データ入力** - RotE TBの小隊・スペシャルミッション情報を入力する（← 残タスク）
+1. **Discord スレッドでの会話継続対応**（← 現在のフォーカス）
+   - `/advice` 実行後にスレッドを自動作成
+   - スレッド内でユーザーのメッセージに返答し続ける
+   - 会話セッション（システムプロンプト + 履歴）をメモリで管理
+
+2. **手動JSONへの実データ入力**（← Phase 1 からの残タスク）
    - `packages/core/data/rote-platoons.json`
    - `packages/core/data/rote-special-missions.json`
 
@@ -287,34 +312,30 @@ packages/
 | サービス        | 誰が動かすか        | 方法                                 |
 | --------------- | ------------------- | ------------------------------------ |
 | **Comlink**     | 自分（ローカル）    | `docker compose up`                  |
-| **Claude API**  | Anthropicのサーバー | 何もしなくていい（外部サービス）     |
+| **AI API**      | 外部サービス        | 何もしなくていい                     |
 | **CLIアプリ**   | 自分                | コマンド実行（サーバー起動不要）     |
-| **Discord bot** | 自分（Phase 2以降） | 別途起動 or docker-compose.ymlに追加 |
+| **Discord bot** | 自分                | `docker compose up`                  |
 | **Webサーバー** | 自分（Phase 3以降） | 別途起動 or docker-compose.ymlに追加 |
 
-### Phase 1（CLI）の起動手順
+### 起動手順
 
 ```
-# 事前に一度だけ起動しておく
-$ docker compose up -d   # ComlinkをDockerでバックグラウンド起動
+# Comlink + Discord bot を両方まとめて起動
+$ docker compose up -d
 
-# 使うたびに実行する（引数不要・チャット形式）
+# CLI（使うたびに実行）
 $ bun run cli
+
+# スラッシュコマンドの登録（コマンド変更時のみ）
+$ bun run deploy-commands
 ```
-
-CLIは「実行したら終わるプログラム」なのでサーバー起動不要。
-**Comlinkさえ起動していれば動く。**
-
-### Phase 2以降の方針
-
-- `docker-compose.yml` にWebサーバーやDiscord botを追加していく
-- 最終的に `docker compose up` の1コマンドで全サービスが立ち上がる構成を目指す
 
 ### `docker-compose.yml` の現在の構成
 
 | サービス名      | 役割                                         | 状態               |
 | --------------- | -------------------------------------------- | ------------------ |
 | `swgoh-comlink` | Comlink本体。プレイヤーデータ等を取得        | **使用中**         |
+| `discord-bot`   | Discord bot本体                              | **使用中**         |
 | `swgoh-stats`   | GP・スタット計算（`statCalcData/` を参照）   | 将来使う可能性あり |
 | `swgoh-ae`      | Asset Explorer（キャラ画像等のアセット取得） | 今は不要           |
 | `fake.help`     | 非推奨・コメントアウト済み                   | 不要               |
