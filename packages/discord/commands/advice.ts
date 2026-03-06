@@ -3,7 +3,8 @@
  *
  * Step 1: 固定の返答を返す（疎通確認用）✅
  * Step 2: allycode オプションを追加してComlinkデータを取得・返す ✅
- * Step 3: mode・purpose オプションを追加してAIアドバイスを返す
+ * Step 3: mode・purpose オプションを追加してAIアドバイスを返す ✅
+ * Step 4: スレッドを自動作成して会話継続できるようにする ✅
  */
 
 import {
@@ -16,7 +17,8 @@ import { continueChat } from "../../core/advisor/client.ts";
 import { buildInitialUserMessage } from "../../core/advisor/prompt.ts";
 import { createModel, DEFAULT_PROVIDER } from "../../core/advisor/providers.ts";
 import { getAllRoteRequirements, getMaxRelicRequirementsMap } from "../../core/data/roteData.ts";
-import type { ModeSelection, RotePurpose } from "../../core/advisor/prompt.ts";
+import type { ModeSelection, RotePurpose, ChatSystemPromptInput } from "../../core/advisor/prompt.ts";
+import { createSession } from "../session.ts";
 
 // -------------------------------------------------------
 // コマンド定義
@@ -152,7 +154,7 @@ function splitMessage(text: string, maxLength = 1900): string[] {
 // -------------------------------------------------------
 
 /**
- * /advice コマンドのハンドラー（Step 3: AIアドバイス）
+ * /advice コマンドのハンドラー（Step 4: スレッドでの会話継続対応）
  */
 export async function execute(
   interaction: ChatInputCommandInteraction,
@@ -186,7 +188,7 @@ export async function execute(
     const player = formatPlayer(rawPlayer);
     const topUnits = getTopNUnits(player, 30);
 
-    // mode が指定されていない場合はデータ表示のみ（Step 2 と同じ動作）
+    // mode が指定されていない場合はデータ表示のみ
     if (modeRaw === null) {
       const topUnitsText = formatTopUnitsForDiscord(topUnits);
       const message = [
@@ -228,6 +230,23 @@ export async function execute(
     const maxRelicRequirementsMap =
       selection.mode === "rote" ? getMaxRelicRequirementsMap() : undefined;
 
+    // システムプロンプト入力データを組み立てる（セッション登録にも使い回す）
+    // exactOptionalPropertyTypes 対応: undefined になり得るオプショナルフィールドは
+    // 値がある場合だけスプレッドで追加する
+    const systemPromptInput: ChatSystemPromptInput = {
+      playerName: player.name,
+      allyCode: player.allyCode,
+      level: player.level,
+      guildName: player.guildName,
+      galacticPower: player.galacticPower,
+      characterGalacticPower: player.characterGalacticPower,
+      shipGalacticPower: player.shipGalacticPower,
+      topUnits,
+      selection,
+      ...(roteRequirements !== undefined ? { roteRequirements } : {}),
+      ...(maxRelicRequirementsMap !== undefined ? { maxRelicRequirementsMap } : {}),
+    };
+
     // AIモデル準備
     const model = createModel(DEFAULT_PROVIDER);
 
@@ -237,19 +256,7 @@ export async function execute(
     // AIアドバイス取得
     const adviceText = await continueChat(
       {
-        systemPromptInput: {
-          playerName: player.name,
-          allyCode: player.allyCode,
-          level: player.level,
-          guildName: player.guildName,
-          galacticPower: player.galacticPower,
-          characterGalacticPower: player.characterGalacticPower,
-          shipGalacticPower: player.shipGalacticPower,
-          topUnits,
-          selection,
-          roteRequirements,
-          maxRelicRequirementsMap,
-        },
+        systemPromptInput,
         history: [{ role: "user", content: initialUserMessage }],
       },
       { model },
@@ -280,6 +287,40 @@ export async function execute(
         await interaction.followUp(chunk);
       }
     }
+
+    // -------------------------------------------------------
+    // スレッド作成 & セッション登録
+    // -------------------------------------------------------
+
+    // スレッドが作れるのはギルドチャンネル内のメッセージのみ
+    // DM やスレッド内での実行は対象外
+    const reply = await interaction.fetchReply();
+
+    if (!reply.channel || !("threads" in reply.channel)) {
+      // スレッド非対応チャンネル（DM等）ではセッション登録のみスキップ
+      return;
+    }
+
+    const thread = await reply.startThread({
+      name: `💬 ${player.name} の育成相談`,
+      // 自動アーカイブまでの時間（分）。セッション TTL の 1時間に合わせる
+      autoArchiveDuration: 60,
+    });
+
+    // セッション登録
+    // history には初回の user → assistant のやり取りを含める
+    createSession(thread.id, systemPromptInput, [
+      { role: "user", content: initialUserMessage },
+      { role: "assistant", content: adviceText },
+    ]);
+
+    await thread.send(
+      [
+        `💬 **このスレッドで続きの質問ができます！**`,
+        `アドバイスについて掘り下げたいことがあれば、気軽にここへどうぞ。`,
+        `（セッションは **1時間** 有効です）`,
+      ].join("\n"),
+    );
   } catch (error) {
     if (error instanceof ComlinkError) {
       await interaction.editReply(
