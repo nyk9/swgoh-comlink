@@ -111,8 +111,8 @@ function formatRoteStatus(
     const currentRelic = unit?.relicLevel ?? 0;
     const currentGear = unit?.gearLevel ?? 0;
 
-    // 未所持（gearLevel === 0）
-    if (unit === undefined || currentGear === 0) {
+    // 未所持
+    if (unit === undefined) {
       notReady.push(
         `  ✗ ${unitId}: 未所持 → Relic${requiredRelic} 必要`,
       );
