@@ -41,7 +41,7 @@ export interface ComlinkUnit {
   /** ギアレベル（1〜13） */
   currentTier: number;
   /** スター数（1〜7） */
-  rarity: number;
+  currentRarity: number;
   /** レリック情報（ギア13のキャラのみ存在） */
   relic?: ComlinkRelic;
 }

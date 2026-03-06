@@ -61,7 +61,7 @@ function formatUnit(unit: ComlinkUnit): FormattedUnit {
   return {
     id: unit.definitionId,
     gearLevel: unit.currentTier,
-    stars: unit.rarity,
+    stars: unit.currentRarity,
     relicLevel,
   };
 }

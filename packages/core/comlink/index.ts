@@ -5,7 +5,7 @@
 export { fetchPlayerData, ComlinkError } from "./client.ts";
 export type { ComlinkClientConfig } from "./client.ts";
 
-export { formatPlayer, filterUnitsByIds, filterUnitsByMinRelic } from "./formatPlayer.ts";
+export { formatPlayer, filterUnitsByIds, filterUnitsByMinRelic, getTopNUnits } from "./formatPlayer.ts";
 
 export type {
   ComlinkPlayerResponse,
