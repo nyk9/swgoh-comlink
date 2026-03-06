@@ -202,7 +202,7 @@ export function filterUnitsByMinRelic(
  */
 export function getTopNUnits(
   player: FormattedPlayer,
-  topN = 30,
+  topN = 50,
 ): FormattedUnit[] {
   const allUnits = Array.from(player.units.values());
 
