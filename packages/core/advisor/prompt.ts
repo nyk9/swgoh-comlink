@@ -91,7 +91,7 @@ function formatRoteStatus(
   maxRelicRequirementsMap: Map<string, number>,
 ): string {
   if (maxRelicRequirementsMap.size === 0) {
-    return "  （RotE TB要件データ未入力。GP上位キャラを元にアドバイスしてください）";
+    return "  （RotE TB要件データ未入力。R5以上キャラを元にアドバイスしてください）";
   }
 
   const topUnitMap = new Map(topUnits.map((u) => [u.id, u]));
@@ -101,14 +101,34 @@ function formatRoteStatus(
   const ready: string[] = [];
 
   for (const [unitId, requiredRelic] of maxRelicRequirementsMap) {
+    // isAny フラグ相当のエントリ（"Any"・"Any Jedi" 等）はスキップ
+    // これらは特定キャラではなく属性縛りの任意枠のため達成状況は表示しない
+    if (unitId === "Any" || unitId.startsWith("Any ")) {
+      continue;
+    }
+
     const unit = topUnitMap.get(unitId);
     const currentRelic = unit?.relicLevel ?? 0;
     const currentGear = unit?.gearLevel ?? 0;
 
-    const currentStatus =
-      currentGear < 13
-        ? `Gear${currentGear}`
-        : `Relic${currentRelic}`;
+    // 未所持（gearLevel === 0）
+    if (unit === undefined || currentGear === 0) {
+      notReady.push(
+        `  ✗ ${unitId}: 未所持 → Relic${requiredRelic} 必要`,
+      );
+      continue;
+    }
+
+    // Gear13未満はレリック解放不可
+    if (currentGear < 13) {
+      notReady.push(
+        `  ✗ ${unitId}: Gear${currentGear}（Gear13未到達のためレリック不可）→ Relic${requiredRelic} 必要`,
+      );
+      continue;
+    }
+
+    // Gear13以上：レリックレベルで判定
+    const currentStatus = `Relic${currentRelic}`;
 
     if (currentRelic >= requiredRelic) {
       ready.push(`  ✓ ${unitId}: ${currentStatus} (要件: Relic${requiredRelic})`);

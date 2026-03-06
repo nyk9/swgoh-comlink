@@ -122,6 +122,9 @@ export function getMaxRelicRequirementsMap(): Map<string, number> {
   const map = new Map<string, number>();
 
   for (const req of requirements) {
+    // isAny フラグのエントリ（任意枠）はキャラ要件ではないためスキップ
+    if (req.isAny === true) continue;
+
     const current = map.get(req.id) ?? 0;
     if (req.requiredRelicLevel > current) {
       map.set(req.id, req.requiredRelicLevel);
