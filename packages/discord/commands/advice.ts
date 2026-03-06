@@ -5,6 +5,9 @@
  * Step 2: allycode オプションを追加してComlinkデータを取得・返す ✅
  * Step 3: mode・purpose オプションを追加してAIアドバイスを返す ✅
  * Step 4: スレッドを自動作成して会話継続できるようにする ✅
+ *
+ * デバッグ機能:
+ * - show_prompt オプション: AI に渡したシステムプロンプトを ephemeral で出力する
  */
 
 import {
@@ -14,7 +17,7 @@ import {
 import { fetchPlayerData, ComlinkError } from "../../core/comlink/client.ts";
 import { formatPlayer, getTopNUnits } from "../../core/comlink/formatPlayer.ts";
 import { continueChat } from "../../core/advisor/client.ts";
-import { buildInitialUserMessage } from "../../core/advisor/prompt.ts";
+import { buildInitialUserMessage, buildSystemPrompt } from "../../core/advisor/prompt.ts";
 import { createModel, DEFAULT_PROVIDER } from "../../core/advisor/providers.ts";
 import { getAllRoteRequirements, getMaxRelicRequirementsMap } from "../../core/data/roteData.ts";
 import type { ModeSelection, RotePurpose, ChatSystemPromptInput } from "../../core/advisor/prompt.ts";
@@ -55,6 +58,12 @@ export const data = new SlashCommandBuilder()
         { name: "スペシャルミッション", value: "special_mission" },
         { name: "GP上げ全般", value: "gp" },
       )
+  )
+  .addBooleanOption((option) =>
+    option
+      .setName("show_prompt")
+      .setDescription("[DEBUG] AIに渡したシステムプロンプトを自分だけに表示する")
+      .setRequired(false)
   );
 
 // -------------------------------------------------------
@@ -163,6 +172,7 @@ export async function execute(
   const allyCode = normalizeAllyCode(rawAllyCode);
   const modeRaw = interaction.options.getString("mode");
   const purposeRaw = interaction.options.getString("purpose");
+  const showPrompt = interaction.options.getBoolean("show_prompt") ?? false;
 
   // バリデーション
   if (!validateAllyCode(allyCode)) {
@@ -252,6 +262,18 @@ export async function execute(
 
     // 初回ユーザーメッセージ
     const initialUserMessage = buildInitialUserMessage(selection);
+
+    // [DEBUG] システムプロンプトを ephemeral で出力
+    if (showPrompt) {
+      const systemPrompt = buildSystemPrompt(systemPromptInput);
+      const promptChunks = splitMessage(
+        `## 🔍 [DEBUG] システムプロンプト\n\`\`\`\n${systemPrompt}\n\`\`\``,
+        1900,
+      );
+      for (const chunk of promptChunks) {
+        await interaction.followUp({ content: chunk, ephemeral: true });
+      }
+    }
 
     // AIアドバイス取得
     const adviceText = await continueChat(
