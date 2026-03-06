@@ -16,7 +16,7 @@ import type { ModeSelection } from "../core/advisor/prompt.ts";
 import { continueChat } from "../core/advisor/client.ts";
 import { buildSystemPrompt, buildInitialUserMessage } from "../core/advisor/prompt.ts";
 import { getAllRoteRequirements, getMaxRelicRequirementsMap } from "../core/data/roteData.ts";
-import { getTopNUnits } from "../core/comlink/formatPlayer.ts";
+import { getUnitsAboveMinRelic } from "../core/comlink/formatPlayer.ts";
 import { select, askOptional, askLine } from "./selector.ts";
 import type { SelectOption } from "./selector.ts";
 import type { RotePurpose } from "../core/advisor/prompt.ts";
@@ -28,7 +28,8 @@ import { GAC_PURPOSE_OPTIONS, GAC_MODE_LABEL } from "./modes/gac.ts";
 // 定数
 // -------------------------------------------------------
 
-const TOP_N_UNITS = 30;
+/** RotE TB の最低レリックライン。R5以上のキャラ全件をAIに渡す */
+const MIN_RELIC_FOR_ADVICE = 5;
 const EXIT_COMMANDS = ["/exit", "/quit", "/q"];
 
 // -------------------------------------------------------
@@ -110,7 +111,7 @@ function buildSystemPromptInput(
   selection: ModeSelection,
   userNote: string | undefined,
 ) {
-  const topUnits = getTopNUnits(player, TOP_N_UNITS);
+  const topUnits = getUnitsAboveMinRelic(player, MIN_RELIC_FOR_ADVICE);
 
   const roteRequirements =
     selection.mode === "rote" ? getAllRoteRequirements() : undefined;

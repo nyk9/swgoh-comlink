@@ -182,23 +182,48 @@ export function filterUnitsByMinRelic(
 }
 
 // -------------------------------------------------------
-// GP上位N件抽出
+// ユニット抽出ユーティリティ
 // -------------------------------------------------------
 
 /**
- * GP上位N件のユニットを返す（キャラクターのみ・シップを除く）
+ * 指定したレリックレベル以上のユニットを全件返す（レリック降順）
  *
- * ゲームデータ上、シップは relic を持たず gearLevel も低めになることが多いため、
- * gearLevel >= 1 かつ relicLevel または gearLevel の高い順に並べて返す。
+ * RotE TB は P1: R5以上、P2: R6以上、... P5/P6: R9/R10 が最低ラインのため、
+ * R5以上を全件渡すことでAIが全フェーズの状況を正確に把握できる。
  *
  * ソート優先度:
- * 1. relicLevel 降順（レリック解放済みキャラを優先）
- * 2. gearLevel 降順（ギアレベルで次点を決める）
- * 3. stars 降順（スター数で最後の順位付け）
+ * 1. relicLevel 降順
+ * 2. gearLevel 降順
+ * 3. stars 降順
+ *
+ * @param player       - 整形済みプレイヤー情報
+ * @param minRelicLevel - 最低レリックレベル（デフォルト: 5）
+ * @returns 条件を満たす全ユニット配列（レリック降順）
+ */
+export function getUnitsAboveMinRelic(
+  player: FormattedPlayer,
+  minRelicLevel = 5,
+): FormattedUnit[] {
+  const allUnits = Array.from(player.units.values());
+
+  return allUnits
+    .filter((u) => u.relicLevel >= minRelicLevel)
+    .sort((a, b) => {
+      if (b.relicLevel !== a.relicLevel) return b.relicLevel - a.relicLevel;
+      if (b.gearLevel !== a.gearLevel) return b.gearLevel - a.gearLevel;
+      return b.stars - a.stars;
+    });
+}
+
+/**
+ * レリック降順上位N件のユニットを返す
+ *
+ * @deprecated AIへのデータ渡しには getUnitsAboveMinRelic を使うこと。
+ *             後方互換のために残しているが、新規呼び出しは避けること。
  *
  * @param player - 整形済みプレイヤー情報
- * @param topN   - 上位何件を返すか（デフォルト: 30）
- * @returns 上位N件のユニット配列（強い順）
+ * @param topN   - 上位何件を返すか（デフォルト: 50）
+ * @returns 上位N件のユニット配列（レリック降順）
  */
 export function getTopNUnits(
   player: FormattedPlayer,

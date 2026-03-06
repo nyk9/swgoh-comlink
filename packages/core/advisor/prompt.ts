@@ -210,7 +210,7 @@ export function buildSystemPrompt(input: ChatSystemPromptInput): string {
 ${selectionText}
 ${userNote ? `\n補足: ${userNote}` : ""}
 
-## GP上位${topUnits.length}キャラクター（強さ順）
+## R5以上キャラクター一覧（レリック降順・全${topUnits.length}件）
 
 ${topUnitsText}
 

@@ -15,7 +15,7 @@ import {
   type ChatInputCommandInteraction,
 } from "discord.js";
 import { fetchPlayerData, ComlinkError } from "../../core/comlink/client.ts";
-import { formatPlayer, getTopNUnits } from "../../core/comlink/formatPlayer.ts";
+import { formatPlayer, getUnitsAboveMinRelic } from "../../core/comlink/formatPlayer.ts";
 import { continueChat } from "../../core/advisor/client.ts";
 import { buildInitialUserMessage, buildSystemPrompt } from "../../core/advisor/prompt.ts";
 import { createModel, DEFAULT_PROVIDER } from "../../core/advisor/providers.ts";
@@ -90,7 +90,7 @@ function normalizeAllyCode(allycode: string): string {
  * Discordの2000文字制限を考慮してコンパクトに整形する
  */
 function formatTopUnitsForDiscord(
-  units: ReturnType<typeof getTopNUnits>
+  units: ReturnType<typeof getUnitsAboveMinRelic>
 ): string {
   if (units.length === 0) {
     return "  （データなし）";
@@ -196,7 +196,7 @@ export async function execute(
 
     // データ整形
     const player = formatPlayer(rawPlayer);
-    const topUnits = getTopNUnits(player, 30);
+    const topUnits = getUnitsAboveMinRelic(player, 5);
 
     // mode が指定されていない場合はデータ表示のみ
     if (modeRaw === null) {
@@ -266,10 +266,11 @@ export async function execute(
     // [DEBUG] システムプロンプトを ephemeral で出力
     if (showPrompt) {
       const systemPrompt = buildSystemPrompt(systemPromptInput);
-      const promptChunks = splitMessage(
-        `## 🔍 [DEBUG] システムプロンプト\n\`\`\`\n${systemPrompt}\n\`\`\``,
-        1900,
-      );
+      // コードブロックは使わずプレーンテキストで分割する
+      // （コードブロック内で分割するとDiscord側で閉じタグが欠けて表示が崩れるため）
+      const headerChunk = `## 🔍 [DEBUG] システムプロンプト`;
+      await interaction.followUp({ content: headerChunk, ephemeral: true });
+      const promptChunks = splitMessage(systemPrompt, 1900);
       for (const chunk of promptChunks) {
         await interaction.followUp({ content: chunk, ephemeral: true });
       }
