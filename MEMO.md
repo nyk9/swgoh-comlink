@@ -19,6 +19,10 @@
 
 - Phase 1: 個人用CLI
 - Phase 2: Discord bot（個人サーバーで試験運用 → ギルドへ展開）
+  - コマンド形式: スラッシュコマンド（`/advice` 等）
+  - Step 1: コマンド認識の確認（固定返答が返ってくるか）
+  - Step 2: Comlinkデータ取得の確認（整形データがチャットに返ってくるか）
+  - Step 3: AIアドバイスまでの確認（`core/advisor` を Discord から呼び出せるか）
 - Phase 3: Web版（一般公開・Next.js等）
 
 ### 技術選択（確定）

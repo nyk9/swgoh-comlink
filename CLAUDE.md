@@ -21,6 +21,27 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 - まず自分のDiscordサーバーに導入して動作確認・改善を繰り返す
 - SWGoHギルドはほぼDiscordサーバーを持っているため相性が良い
 - Phase 2で安定したらギルドのDiscordに導入してもらう形での展開を想定（Phase 3へ）
+- **コマンド形式: スラッシュコマンド（`/advice` 等）**
+
+#### Phase 2 開発ステップ
+
+**Step 1: コマンド認識の確認**
+
+- Discord botをセットアップしてスラッシュコマンドを登録する
+- `/advice` コマンドを叩いたら固定の返事が返ってくることを確認する
+- 目的: Discordとの疎通・コマンド登録の仕組みを確認する
+
+**Step 2: Comlinkデータ取得の確認**
+
+- `/advice allycode:445833733` でComlinkからデータを取得する
+- AIに渡す用に整形したデータ（GP上位30キャラ等）をチャットに返す
+- 目的: Comlink → Discord の一連のパイプラインを確認する
+
+**Step 3: AIアドバイスまでの確認**
+
+- モード・目的を引数で受け取り（例: `/advice allycode:445833733 mode:rote purpose:platoon`）
+- `core/advisor` を呼び出してAIのアドバイスをチャットに返す
+- 目的: CLI と同じ `core/` を Discord からも呼び出せることを確認する
 
 ### Phase 3: Web版（一般公開）
 
