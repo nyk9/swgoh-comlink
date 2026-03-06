@@ -18,8 +18,8 @@
 ### インターフェースのロードマップ
 
 - Phase 1: 個人用CLI
-- Phase 2: Web版（Next.js、もしくは会社で使うフレームワーク）
-- Phase 3: Discord bot（SWGoHコミュニティとの相性が良いため）
+- Phase 2: Discord bot（個人サーバーで試験運用 → ギルドへ展開）
+- Phase 3: Web版（一般公開・Next.js等）
 
 ### 技術選択（確定）
 
@@ -166,8 +166,8 @@ swgoh-comlink/
 │   │       ├── tw.ts            # TW（スケルトン）
 │   │       └── gac.ts           # GAC（スケルトン）
 │   │
-│   ├── web/                     # Phase 2: Webアプリ（未実装）
-│   └── discord/                 # Phase 3: Discord bot（未実装）
+│   ├── discord/                 # Phase 2: Discord bot（未実装）
+│   └── web/                     # Phase 3: Webアプリ（未実装）
 │
 ├── api-test/                    # APIテスト・調査用スクリプト
 │   └── player-*.json            # ⛔️ 実際のプレイヤーデータ（閲覧禁止）

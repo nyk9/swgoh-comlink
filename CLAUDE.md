@@ -16,15 +16,16 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 - 動くものを最速で作ることを優先する
 - **チャット形式のUXに全面改修済み**（下記「Phase 1 CLI チャット設計」参照）
 
-### Phase 2: Web版（一般公開）
+### Phase 2: Discord bot（個人サーバー試験用）
+
+- まず自分のDiscordサーバーに導入して動作確認・改善を繰り返す
+- SWGoHギルドはほぼDiscordサーバーを持っているため相性が良い
+- Phase 2で安定したらギルドのDiscordに導入してもらう形での展開を想定（Phase 3へ）
+
+### Phase 3: Web版（一般公開）
 
 - Web開発経験あり
 - ブラウザから誰でも使えるUIを作る
-
-### Phase 3: Discord bot（コミュニティ展開）
-
-- SWGoHギルドはほぼDiscordサーバーを持っているため相性が良い
-- ギルドのDiscordに導入してもらう形での展開を想定
 
 ---
 
@@ -144,8 +145,8 @@ swgoh-comlink/
 │   │       ├── tw.ts            # TW（スケルトン）
 │   │       └── gac.ts           # GAC（スケルトン）
 │   │
-│   ├── web/                     # Phase 2: Webアプリ（未実装）
-│   └── discord/                 # Phase 3: Discord bot（未実装）
+│   ├── discord/                 # Phase 2: Discord bot（未実装）
+│   └── web/                     # Phase 3: Webアプリ（未実装）
 │
 ├── api-test/                    # APIテスト・調査用スクリプト
 │   └── player-*.json            # ⛔️ 実際のプレイヤーデータ（閲覧禁止）
@@ -267,8 +268,8 @@ packages/
 | **Comlink**     | 自分（ローカル）    | `docker compose up`                  |
 | **Claude API**  | Anthropicのサーバー | 何もしなくていい（外部サービス）     |
 | **CLIアプリ**   | 自分                | コマンド実行（サーバー起動不要）     |
-| **Webサーバー** | 自分（Phase 2以降） | 別途起動 or docker-compose.ymlに追加 |
-| **Discord bot** | 自分（Phase 3以降） | 別途起動 or docker-compose.ymlに追加 |
+| **Discord bot** | 自分（Phase 2以降） | 別途起動 or docker-compose.ymlに追加 |
+| **Webサーバー** | 自分（Phase 3以降） | 別途起動 or docker-compose.ymlに追加 |
 
 ### Phase 1（CLI）の起動手順
 
