@@ -85,8 +85,9 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 
 ### AIへのアドバイス依頼の形式
 
-- ユーザーがコマンドで目的（TB用・TW用・GAC用など）を指定
-- 指定された目的に応じて渡すデータとプロンプトを切り替える
+- CLIチャット起動後、対話形式でモード（RotE TB / TW / GAC）と目的を選択する
+- 選択された目的に応じてシステムプロンプトを組み立て、AIに渡す
+- 初回アドバイス後は自由入力で掘り下げ質問ができる（/exit で終了）
 
 ---
 
@@ -108,14 +109,47 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 
 ```
 swgoh-comlink/
-├── CLAUDE.md               # このファイル（プロジェクト概要）
-├── README.md               # 元のComlink README
-├── api-test/               # APIテスト用スクリプト（自作）
-│   ├── player.ts           # プレイヤーデータ取得テスト
-│   └── player-*.json       # ⛔️ 実際のプレイヤーデータ（閲覧禁止）
-├── installation/           # インストール手順
-├── postman/                # Postmanコレクション
-└── statCalcData/           # スタット計算データ
+├── CLAUDE.md                    # このファイル（プロジェクト概要）
+├── MEMO.md                      # 会話メモ・決定事項ログ
+├── README.md                    # 元のComlink README
+├── PRIVACY-STATEMENT.md         # プライバシーポリシー
+├── docker-compose.yml           # Comlink起動用
+│
+├── packages/                    # 本番コード
+│   ├── core/                    # 共通ロジック（CLI・Web・Discord共通）
+│   │   ├── comlink/
+│   │   │   ├── client.ts        # ComlinkへのHTTPリクエスト
+│   │   │   ├── formatPlayer.ts  # プレイヤーデータ整形・GP上位N件抽出
+│   │   │   ├── types.ts         # 型定義
+│   │   │   └── index.ts
+│   │   ├── advisor/
+│   │   │   ├── client.ts        # AI呼び出し（continueChat・会話履歴対応）
+│   │   │   ├── prompt.ts        # システムプロンプト組み立て
+│   │   │   ├── providers.ts     # AIプロバイダー管理（Google / Anthropic）
+│   │   │   └── index.ts
+│   │   └── data/
+│   │       ├── rote-platoons.json          # RotE TB 小隊情報（手動管理）
+│   │       ├── rote-special-missions.json  # RotE TB スペシャルミッション（手動管理）
+│   │       ├── roteData.ts      # 手動JSONの読み込み・集約
+│   │       ├── types.ts         # 型定義
+│   │       └── index.ts
+│   │
+│   ├── cli/                     # Phase 1: CLIアプリ（実装済み）
+│   │   ├── index.ts             # エントリーポイント（bun run cli）
+│   │   ├── chat.ts              # 対話ループ本体
+│   │   ├── selector.ts          # 選択式UIユーティリティ
+│   │   ├── config.ts            # ~/.swgoh-advisor/config.json 管理
+│   │   └── modes/               # モード別選択肢定義
+│   │       ├── rote.ts          # RotE TB
+│   │       ├── tw.ts            # TW（スケルトン）
+│   │       └── gac.ts           # GAC（スケルトン）
+│   │
+│   ├── web/                     # Phase 2: Webアプリ（未実装）
+│   └── discord/                 # Phase 3: Discord bot（未実装）
+│
+├── api-test/                    # APIテスト・調査用スクリプト
+│   └── player-*.json            # ⛔️ 実際のプレイヤーデータ（閲覧禁止）
+└── statCalcData/                # スタット計算データ（swgoh-statsが使用）
 ```
 
 > **⛔️ 重要: `api-test/player-*.json` は実際のプレイヤーデータが含まれる実データファイルです。
@@ -184,26 +218,26 @@ swgoh-comlink/
 - 将来的には「決定事項メモ管理」方式に移行予定
 ```
 
-### 変更・追加するファイル
+### 実装済みファイル構成
 
 ```
 packages/
 ├── core/
 │   ├── comlink/
-│   │   └── formatPlayer.ts     # GP上位N件抽出関数を追加
+│   │   └── formatPlayer.ts     # getTopNUnits() 追加済み
 │   └── advisor/
-│       ├── prompt.ts           # チャット用システムプロンプトに変更
-│       └── client.ts           # 会話履歴を受け取れるように変更
+│       ├── prompt.ts           # チャット用システムプロンプト（buildSystemPrompt / buildInitialUserMessage）
+│       └── client.ts           # continueChat()・ChatMessage 型追加済み
 │
 └── cli/
-    ├── index.ts                # チャットループに全面改修
-    ├── chat.ts                 # 対話ループ本体（新規）
-    ├── selector.ts             # 選択式UIのユーティリティ（新規）
-    ├── config.ts               # ~/.swgoh-advisor/config.json の読み書き（新規）
-    └── modes/                  # モード別の選択肢定義（新規）
-        ├── rote.ts             # RotE TBの目的選択肢
-        ├── tw.ts               # TW用（スケルトンのみ）
-        └── gac.ts              # GAC用（スケルトンのみ）
+    ├── index.ts                # チャットループ起動に全面改修済み
+    ├── chat.ts                 # 対話ループ本体
+    ├── selector.ts             # 選択式UIユーティリティ
+    ├── config.ts               # ~/.swgoh-advisor/config.json 管理
+    └── modes/                  # モード別選択肢定義
+        ├── rote.ts             # RotE TB（小隊・通常・スペシャル・GP上げ）
+        ├── tw.ts               # TW（スケルトン）
+        └── gac.ts              # GAC（スケルトン）
 ```
 
 ### 拡張性の設計方針
@@ -216,9 +250,11 @@ packages/
 
 ## 今後の次のアクション（Phase 1）
 
-1. **CLIチャット形式への改修** - `packages/cli/` を対話型チャットに全面改修する
-2. **GP上位30キャラ抽出** - `formatPlayer.ts` に抽出関数を追加する
-3. **手動JSONへの実データ入力** - RotE TBの小隊・スペシャルミッション情報を入力する（後回し可）
+1. ~~**CLIチャット形式への改修**~~ ✅ 完了
+2. ~~**GP上位30キャラ抽出**~~ ✅ 完了
+3. **手動JSONへの実データ入力** - RotE TBの小隊・スペシャルミッション情報を入力する（← 残タスク）
+   - `packages/core/data/rote-platoons.json`
+   - `packages/core/data/rote-special-missions.json`
 
 ---
 
