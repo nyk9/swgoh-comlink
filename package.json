@@ -7,6 +7,8 @@
   ],
   "scripts": {
     "cli": "bun run packages/cli/index.ts",
+    "discord": "bun run packages/discord/index.ts",
+    "deploy-commands": "bun run packages/discord/deploy-commands.ts",
     "build": "bun run --filter '*' build",
     "dev": "bun run --filter '*' dev",
     "test": "bun run --filter '*' test",

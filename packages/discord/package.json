@@ -1,0 +1,22 @@
+{
+  "name": "@swgoh-advisor/discord",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun run --watch index.ts",
+    "deploy": "bun run deploy-commands.ts",
+    "build": "bun build ./index.ts --outdir ./dist --target node",
+    "test": "bun test",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@swgoh-advisor/core": "workspace:*",
+    "discord.js": "^14.25.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "bun-types": "latest"
+  }
+}
