@@ -269,10 +269,10 @@ export async function execute(
       // コードブロックは使わずプレーンテキストで分割する
       // （コードブロック内で分割するとDiscord側で閉じタグが欠けて表示が崩れるため）
       const headerChunk = `## 🔍 [DEBUG] システムプロンプト`;
-      await interaction.followUp({ content: headerChunk, ephemeral: true });
+      await interaction.followUp({ content: headerChunk });
       const promptChunks = splitMessage(systemPrompt, 1900);
       for (const chunk of promptChunks) {
-        await interaction.followUp({ content: chunk, ephemeral: true });
+        await interaction.followUp({ content: chunk });
       }
     }
 
