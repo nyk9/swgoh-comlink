@@ -180,3 +180,37 @@ export function filterUnitsByMinRelic(
 
   return filtered;
 }
+
+// -------------------------------------------------------
+// GP上位N件抽出
+// -------------------------------------------------------
+
+/**
+ * GP上位N件のユニットを返す（キャラクターのみ・シップを除く）
+ *
+ * ゲームデータ上、シップは relic を持たず gearLevel も低めになることが多いため、
+ * gearLevel >= 1 かつ relicLevel または gearLevel の高い順に並べて返す。
+ *
+ * ソート優先度:
+ * 1. relicLevel 降順（レリック解放済みキャラを優先）
+ * 2. gearLevel 降順（ギアレベルで次点を決める）
+ * 3. stars 降順（スター数で最後の順位付け）
+ *
+ * @param player - 整形済みプレイヤー情報
+ * @param topN   - 上位何件を返すか（デフォルト: 30）
+ * @returns 上位N件のユニット配列（強い順）
+ */
+export function getTopNUnits(
+  player: FormattedPlayer,
+  topN = 30,
+): FormattedUnit[] {
+  const allUnits = Array.from(player.units.values());
+
+  const sorted = allUnits.sort((a, b) => {
+    if (b.relicLevel !== a.relicLevel) return b.relicLevel - a.relicLevel;
+    if (b.gearLevel !== a.gearLevel) return b.gearLevel - a.gearLevel;
+    return b.stars - a.stars;
+  });
+
+  return sorted.slice(0, topN);
+}
