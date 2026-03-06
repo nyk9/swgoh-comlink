@@ -1,198 +1,259 @@
 /**
- * RotE TB アドバイス用プロンプト組み立てモジュール
+ * RotE TB チャットアドバイス用プロンプト組み立てモジュール
+ *
+ * チャット形式対応:
+ * - buildSystemPrompt: セッション開始時に1回だけ組み立てるシステムプロンプト
+ *   プレイヤー情報・目的・手動JSONデータを全て埋め込む
+ * - 会話履歴は呼び出し元（client.ts）が管理する
  */
 
-import type { FormattedPlayer, FormattedUnit } from "../comlink/types.ts";
+import type { FormattedUnit } from "../comlink/types.ts";
 import type { UnitRequirement } from "../data/types.ts";
 
 // -------------------------------------------------------
 // 型定義
 // -------------------------------------------------------
 
-export interface RoteTBPromptInput {
-  player: FormattedPlayer;
-  requirements: UnitRequirement[];
-  /** 最大レリック要件Map（ユニットID → 最大必要レリックレベル） */
-  maxRelicRequirementsMap: Map<string, number>;
-}
+/** 対応しているゲームモード */
+export type GameMode = "rote" | "tw" | "gac";
 
-interface UnitStatus {
-  id: string;
-  note: string;
-  requiredRelicLevel: number;
-  currentRelicLevel: number;
-  currentGearLevel: number;
-  stars: number;
-  /** 要件を満たしているか */
-  meetsRequirement: boolean;
-  /** レリック不足分（0なら不足なし） */
-  relicDeficit: number;
+/** RotE TBの目的 */
+export type RotePurpose =
+  | "platoon"
+  | "combat_mission"
+  | "special_mission"
+  | "gp";
+
+/** 選択されたモードと目的 */
+export type ModeSelection =
+  | { mode: "rote"; purpose: RotePurpose }
+  | { mode: "tw" }
+  | { mode: "gac" };
+
+/**
+ * システムプロンプト生成に必要な入力データ
+ */
+export interface ChatSystemPromptInput {
+  /** プレイヤー名 */
+  playerName: string;
+  /** アライコード */
+  allyCode: number;
+  /** プレイヤーレベル */
+  level: number;
+  /** ギルド名 */
+  guildName: string;
+  /** 総GP */
+  galacticPower: number;
+  /** キャラクターGP */
+  characterGalacticPower: number;
+  /** 艦隊GP */
+  shipGalacticPower: number;
+  /** GP上位30キャラ（強さ順） */
+  topUnits: FormattedUnit[];
+  /** 選択されたモードと目的 */
+  selection: ModeSelection;
+  /** ユーザーが入力した自由記述の補足（任意） */
+  userNote?: string;
+  /** RotE TBの要件一覧（手動JSONから。空でも可） */
+  roteRequirements?: UnitRequirement[];
+  /** RotE TBの最大レリック要件Map（ユニットID → 最大必要レリックレベル） */
+  maxRelicRequirementsMap?: Map<string, number>;
 }
 
 // -------------------------------------------------------
-// ユニット状況の算出
+// ユーティリティ
 // -------------------------------------------------------
 
 /**
- * 各ユニットの現状と要件のギャップを算出する
+ * GP上位ユニット一覧をプロンプト用テキストに変換する
  */
-function buildUnitStatusList(
-  requirements: UnitRequirement[],
-  maxRelicRequirementsMap: Map<string, number>,
-  playerUnits: Map<string, FormattedUnit>,
-): UnitStatus[] {
-  // ユニットIDごとに重複排除（最大レリック要件Mapのキーを使う）
-  const seen = new Set<string>();
-  const statusList: UnitStatus[] = [];
-
-  for (const [unitId, requiredRelicLevel] of maxRelicRequirementsMap) {
-    if (seen.has(unitId)) continue;
-    seen.add(unitId);
-
-    // noteはrequirementsから取得（最初に見つかったものを使用）
-    const reqEntry = requirements.find((r) => r.id === unitId);
-    const note = reqEntry?.note ?? unitId;
-
-    const playerUnit = playerUnits.get(unitId);
-    const currentRelicLevel = playerUnit?.relicLevel ?? 0;
-    const currentGearLevel = playerUnit?.gearLevel ?? 0;
-    const stars = playerUnit?.stars ?? 0;
-
-    const relicDeficit = Math.max(0, requiredRelicLevel - currentRelicLevel);
-    const meetsRequirement = relicDeficit === 0;
-
-    statusList.push({
-      id: unitId,
-      note,
-      requiredRelicLevel,
-      currentRelicLevel,
-      currentGearLevel,
-      stars,
-      meetsRequirement,
-      relicDeficit,
-    });
+function formatTopUnits(topUnits: FormattedUnit[]): string {
+  if (topUnits.length === 0) {
+    return "  （データなし）";
   }
 
-  // 不足しているユニットを先頭に、不足が大きい順に並べる
-  statusList.sort((a, b) => {
-    if (a.meetsRequirement !== b.meetsRequirement) {
-      return a.meetsRequirement ? 1 : -1;
-    }
-    return b.relicDeficit - a.relicDeficit;
-  });
-
-  return statusList;
+  return topUnits
+    .map((u, i) => {
+      const status =
+        u.gearLevel < 13
+          ? `Gear${u.gearLevel} / ${u.stars}★`
+          : `Relic${u.relicLevel} / ${u.stars}★`;
+      return `  ${i + 1}. ${u.id}: ${status}`;
+    })
+    .join("\n");
 }
 
-// -------------------------------------------------------
-// プロンプト組み立て
-// -------------------------------------------------------
-
 /**
- * ユニット状況テーブルを文字列に変換する
+ * RotE TB 要件達成状況テキストを生成する
  */
-function formatUnitStatusTable(statusList: UnitStatus[]): string {
+function formatRoteStatus(
+  topUnits: FormattedUnit[],
+  maxRelicRequirementsMap: Map<string, number>,
+): string {
+  if (maxRelicRequirementsMap.size === 0) {
+    return "  （RotE TB要件データ未入力。GP上位キャラを元にアドバイスしてください）";
+  }
+
+  const topUnitMap = new Map(topUnits.map((u) => [u.id, u]));
   const lines: string[] = [];
 
-  const notReady = statusList.filter((u) => !u.meetsRequirement);
-  const ready = statusList.filter((u) => u.meetsRequirement);
+  const notReady: string[] = [];
+  const ready: string[] = [];
 
-  if (notReady.length > 0) {
-    lines.push("【要件未達のキャラクター】");
-    for (const u of notReady) {
-      const gearOrRelic =
-        u.currentGearLevel < 13
-          ? `Gear${u.currentGearLevel}`
-          : `Relic${u.currentRelicLevel}`;
-      lines.push(
-        `  - ${u.note} (ID: ${u.id}): 現在 ${gearOrRelic} / 必要 Relic${u.requiredRelicLevel} → ${u.relicDeficit > 0 ? `あと${u.relicDeficit}レリック不足` : "Gearアップが必要"}`,
+  for (const [unitId, requiredRelic] of maxRelicRequirementsMap) {
+    const unit = topUnitMap.get(unitId);
+    const currentRelic = unit?.relicLevel ?? 0;
+    const currentGear = unit?.gearLevel ?? 0;
+
+    const currentStatus =
+      currentGear < 13
+        ? `Gear${currentGear}`
+        : `Relic${currentRelic}`;
+
+    if (currentRelic >= requiredRelic) {
+      ready.push(`  ✓ ${unitId}: ${currentStatus} (要件: Relic${requiredRelic})`);
+    } else {
+      const deficit = requiredRelic - currentRelic;
+      notReady.push(
+        `  ✗ ${unitId}: ${currentStatus} → Relic${requiredRelic} 必要（あと${deficit}不足）`,
       );
     }
   }
 
+  if (notReady.length > 0) {
+    lines.push("【要件未達】");
+    lines.push(...notReady);
+  }
   if (ready.length > 0) {
     lines.push("");
-    lines.push("【要件達成済みのキャラクター】");
-    for (const u of ready) {
-      const gearOrRelic =
-        u.currentGearLevel < 13
-          ? `Gear${u.currentGearLevel}`
-          : `Relic${u.currentRelicLevel}`;
-      lines.push(
-        `  - ${u.note} (ID: ${u.id}): 現在 ${gearOrRelic} / 必要 Relic${u.requiredRelicLevel} ✓`,
-      );
-    }
+    lines.push("【要件達成済み】");
+    lines.push(...ready);
   }
 
   return lines.join("\n");
 }
 
 /**
- * RotE TB アドバイス用のプロンプトを組み立てる
- *
- * @param input - プロンプト生成に必要なデータ
- * @returns Claude APIに渡すプロンプト文字列（userメッセージ部分）
+ * 選択されたモード・目的を日本語テキストに変換する
  */
-export function buildRoteTBPrompt(input: RoteTBPromptInput): string {
-  const { player, requirements, maxRelicRequirementsMap } = input;
+function formatSelection(selection: ModeSelection): string {
+  if (selection.mode === "rote") {
+    const purposeLabels: Record<RotePurpose, string> = {
+      platoon: "小隊配置（Platoon）の最大化",
+      combat_mission: "通常戦闘ミッションへの貢献",
+      special_mission: "スペシャルミッションのクリア",
+      gp: "GP上げ全般",
+    };
+    return `Rise of the Empire TB / ${purposeLabels[selection.purpose]}`;
+  }
+  if (selection.mode === "tw") {
+    return "テリトリーウォー（TW）";
+  }
+  return "グランドアリーナ（GAC）";
+}
 
-  const statusList = buildUnitStatusList(
-    requirements,
+// -------------------------------------------------------
+// システムプロンプト組み立て
+// -------------------------------------------------------
+
+/**
+ * チャットセッション全体で使うシステムプロンプトを組み立てる
+ *
+ * セッション開始時に1回だけ呼ばれる。
+ * プレイヤー情報・目的・手動JSONデータを全て埋め込み、
+ * 以降の会話の土台となる文脈を提供する。
+ *
+ * @param input - システムプロンプト生成に必要なデータ
+ * @returns Claude APIに渡すシステムプロンプト文字列
+ */
+export function buildSystemPrompt(input: ChatSystemPromptInput): string {
+  const {
+    playerName,
+    allyCode,
+    level,
+    guildName,
+    galacticPower,
+    characterGalacticPower,
+    shipGalacticPower,
+    topUnits,
+    selection,
+    userNote,
+    roteRequirements,
     maxRelicRequirementsMap,
-    player.units,
-  );
+  } = input;
 
-  const notReadyCount = statusList.filter((u) => !u.meetsRequirement).length;
-  const readyCount = statusList.filter((u) => u.meetsRequirement).length;
-  const totalCount = statusList.length;
+  const topUnitsText = formatTopUnits(topUnits);
+  const selectionText = formatSelection(selection);
 
-  const unitStatusText = formatUnitStatusTable(statusList);
+  const roteStatusText =
+    selection.mode === "rote" && maxRelicRequirementsMap != null
+      ? formatRoteStatus(topUnits, maxRelicRequirementsMap)
+      : null;
+
+  const requirementsCount = roteRequirements?.length ?? 0;
 
   return `
 あなたはStar Wars: Galaxy of Heroes（SWGoH）の育成アドバイザーです。
-プレイヤーのキャラクター育成状況を分析し、Rise of the Empire（RotE）テリトリーバトル（TB）の攻略に向けた具体的な育成アドバイスを提供してください。
+以下のプレイヤー情報を元に、具体的で実践的な育成アドバイスを提供してください。
+プレイヤーとの対話形式で、質問には丁寧かつ簡潔に日本語で答えてください。
 
 ## プレイヤー情報
 
-- プレイヤー名: ${player.name}
-- アライコード: ${player.allyCode}
-- プレイヤーレベル: ${player.level}
-- 総GP: ${player.galacticPower.toLocaleString("ja-JP")}（キャラ: ${player.characterGalacticPower.toLocaleString("ja-JP")} / 艦隊: ${player.shipGalacticPower.toLocaleString("ja-JP")}）
-- ギルド: ${player.guildName || "（ギルド未加入）"}
+- プレイヤー名: ${playerName}
+- アライコード: ${allyCode}
+- プレイヤーレベル: ${level}
+- ギルド: ${guildName || "（ギルド未加入）"}
+- 総GP: ${galacticPower.toLocaleString("ja-JP")}（キャラ: ${characterGalacticPower.toLocaleString("ja-JP")} / 艦隊: ${shipGalacticPower.toLocaleString("ja-JP")}）
 
-## RotE TB 要件達成状況のサマリー
+## 今回の目的
 
-- 対象キャラクター総数: ${totalCount}
-- 要件達成済み: ${readyCount} キャラ
-- 要件未達: ${notReadyCount} キャラ
+${selectionText}
+${userNote ? `\n補足: ${userNote}` : ""}
 
-## キャラクター別の詳細状況
+## GP上位${topUnits.length}キャラクター（強さ順）
 
-${unitStatusText}
+${topUnitsText}
 
-## 依頼内容
+${
+  roteStatusText != null
+    ? `## RotE TB 要件達成状況（要件データ件数: ${requirementsCount}件）
 
-上記の情報を元に、以下の点についてアドバイスをお願いします。
+${roteStatusText}
+`
+    : ""
+}
+## アドバイスの方針
 
-1. **優先的に育てるべきキャラクターのトップ5**
-   - 理由（どのフェーズ・どのミッションに影響するか）も含めてください
-
-2. **現状でRotE TBに貢献できる点**
-   - 要件達成済みのキャラを活かせる場面
-
-3. **中期的な育成方針**
-   - 今後2〜3ヶ月で目指すべき目標
-
-回答は日本語でお願いします。具体的で実践的なアドバイスを期待しています。
+- 上記のGP上位キャラクターの実データを必ず参照してアドバイスすること
+- 「今のプレイヤーの状況」に基づいた具体的なキャラクター名を挙げること
+- RotE TB要件データが空の場合でも、GP上位キャラから推測してアドバイスすること
+- 育成の優先順位を明確にすること（なぜそのキャラが優先かも説明する）
+- 短期（次のTBまで）・中期（2〜3ヶ月）の目標を分けて考えること
+- プレイヤーからの追加質問には、前の会話の文脈を踏まえて答えること
 `.trim();
 }
 
 /**
- * システムプロンプトを返す
+ * チャットセッションの最初のユーザーメッセージ（初回アドバイス依頼）を返す
+ *
+ * @param selection - 選択されたモードと目的
+ * @returns 最初のユーザーメッセージ文字列
  */
-export function buildSystemPrompt(): string {
-  return `あなたはStar Wars: Galaxy of Heroes（SWGoH）の専門家です。
-ゲームのメカニクス、キャラクターの役割、テリトリーバトル（TB）の仕組みに精通しています。
-プレイヤーのデータを元に、具体的で実践的な育成アドバイスを提供することが得意です。
-回答は日本語で、箇条書きや見出しを使って読みやすく整理してください。`;
+export function buildInitialUserMessage(selection: ModeSelection): string {
+  if (selection.mode === "rote") {
+    const purposeMessages: Record<RotePurpose, string> = {
+      platoon:
+        "私のキャラクター育成状況を踏まえて、RotE TBの小隊配置（Platoon）を最大化するための育成アドバイスをしてください。優先的に育てるべきキャラクターのトップ5と、その理由を教えてください。",
+      combat_mission:
+        "私のキャラクター育成状況を踏まえて、RotE TBの通常戦闘ミッションに貢献するための育成アドバイスをしてください。今すぐ使える編成と、今後育てるべきキャラクターを教えてください。",
+      special_mission:
+        "私のキャラクター育成状況を踏まえて、RotE TBのスペシャルミッションをクリアするための育成アドバイスをしてください。どのミッションが達成可能で、何を育てれば次のミッションが解放されるか教えてください。",
+      gp: "私のキャラクター育成状況を踏まえて、GPを効率よく上げるための育成アドバイスをしてください。RotE TBへの貢献も考慮しながら、優先的に育てるべきキャラクターを教えてください。",
+    };
+    return purposeMessages[selection.purpose];
+  }
+  if (selection.mode === "tw") {
+    return "私のキャラクター育成状況を踏まえて、テリトリーウォー（TW）での貢献を最大化するための育成アドバイスをしてください。";
+  }
+  return "私のキャラクター育成状況を踏まえて、グランドアリーナ（GAC）での戦績を上げるための育成アドバイスをしてください。";
 }
