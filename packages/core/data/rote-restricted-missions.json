@@ -1,0 +1,323 @@
+{
+  "_comment": "RotE (Rise of the Empire) TB ミッション情報 - 手動管理ファイル。スペシャルミッションと属性限定戦闘ミッションを統合管理する。",
+  "_lastUpdated": "YYYY-MM-DD",
+  "_schema": {
+    "phases[].phase": "フェーズ番号（1〜6）",
+    "phases[].zones[].zoneId": "ゾーンの識別子（任意の文字列）",
+    "phases[].zones[].zoneName": "ゾーン名（例: Dark Side / Light Side / Neutral）",
+    "phases[].zones[].missions[].missionId": "ミッションの識別子（任意の文字列）",
+    "phases[].zones[].missions[].missionName": "ミッション名（例: Special Mission 1）",
+    "phases[].zones[].missions[].missionType": "ミッション種別: 'special'（特別報酬あり）| 'combat_restricted'（属性限定戦闘ミッション、通常TP報酬のみ）。省略時は 'special' として扱う",
+    "phases[].zones[].missions[].description": "ミッションの説明・備考",
+    "phases[].zones[].missions[].squads[].squadId": "編成の識別子（同一ミッションに複数編成がある場合を考慮）",
+    "phases[].zones[].missions[].squads[].squadName": "編成名（例: Squad A）",
+    "phases[].zones[].missions[].squads[].requiredTags": "スクワッド全体の属性タグ制限（省略可）。例: ['Mandalorian'] → マンダロリアン属性のキャラのみ参加可",
+    "phases[].zones[].missions[].squads[].units[].id": "ComlinkのユニットID（例: DARTHVADER）。isAny=true の場合は属性ラベル（例: 'Any Mandalorian'）",
+    "phases[].zones[].missions[].squads[].units[].requiredRelicLevel": "必要レリックレベル（0=レリック不要、1〜9）",
+    "phases[].zones[].missions[].squads[].units[].isLeader": "リーダー指定かどうか（true/false）",
+    "phases[].zones[].missions[].squads[].units[].isAny": "任意枠かどうか（省略可）。true = 属性タグを満たす任意キャラでOK。false または省略 = id で指定した特定キャラが必須",
+    "phases[].zones[].missions[].squads[].units[].note": "メモ（キャラの表示名・属性名など）"
+  },
+  "_examples": {
+    "例1_特定キャラ+任意3体": {
+      "description": "キーラ（必須）、ヤングハンソロ（必須）、任意3体（属性縛りなし）",
+      "squads": [
+        {
+          "squadId": "example_squad1",
+          "squadName": "Squad A",
+          "units": [
+            { "id": "QUILARA", "requiredRelicLevel": 7, "isLeader": true, "note": "キーラ" },
+            { "id": "YOUNGHANSOLOEXILE", "requiredRelicLevel": 7, "isLeader": false, "note": "ヤングハンソロ" },
+            { "id": "Any", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+            { "id": "Any", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+            { "id": "Any", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+          ]
+        }
+      ]
+    },
+    "例2_特定キャラ2体のみ": {
+      "description": "シアジュンダ（必須）、JKCK（必須）の2体のみ",
+      "squads": [
+        {
+          "squadId": "example_squad2",
+          "squadName": "Squad A",
+          "units": [
+            { "id": "SHAAKTI", "requiredRelicLevel": 7, "isLeader": true, "note": "シアジュンダ" },
+            { "id": "JEDIKNIGHT_CALKESTIS", "requiredRelicLevel": 7, "isLeader": false, "note": "JKCK（ジェダイナイト・カル・ケスティス）" }
+          ]
+        }
+      ]
+    },
+    "例3_特定キャラ+属性縛り任意3体": {
+      "description": "ボ＝カターン（必須）、ベスカーマンドー（必須）、マンダロリアン任意3体",
+      "squads": [
+        {
+          "squadId": "example_squad3",
+          "squadName": "Squad A",
+          "requiredTags": ["Mandalorian"],
+          "units": [
+            { "id": "BOKATAN_KRYZE", "requiredRelicLevel": 7, "isLeader": true, "note": "ボ＝カターン（マンダロア）" },
+            { "id": "BESCARMANDALORIAN", "requiredRelicLevel": 7, "isLeader": false, "note": "ベスカーマンドー" },
+            { "id": "Any Mandalorian", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意マンダロリアン" },
+            { "id": "Any Mandalorian", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意マンダロリアン" },
+            { "id": "Any Mandalorian", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意マンダロリアン" }
+          ]
+        }
+      ]
+    },
+    "例4_属性限定戦闘ミッション_特定キャラ+任意4体": {
+      "description": "ドクターアフラ（必須）、任意4体（属性縛りなし）。missionType: combat_restricted",
+      "missionType": "combat_restricted",
+      "squads": [
+        {
+          "squadId": "example_squad4",
+          "squadName": "Squad A",
+          "units": [
+            { "id": "DRAPHDOCTORAPTHRA", "requiredRelicLevel": 5, "isLeader": true, "note": "ドクターアフラ" },
+            { "id": "Any", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+            { "id": "Any", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+            { "id": "Any", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+            { "id": "Any", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+          ]
+        }
+      ]
+    },
+    "例5_属性限定戦闘ミッション_属性のみ縛り": {
+      "description": "ジェダイ5体（属性縛りのみ、特定キャラ指定なし）。missionType: combat_restricted",
+      "missionType": "combat_restricted",
+      "squads": [
+        {
+          "squadId": "example_squad5",
+          "squadName": "Squad A",
+          "requiredTags": ["Jedi"],
+          "units": [
+            { "id": "Any Jedi", "requiredRelicLevel": 0, "isLeader": true, "isAny": true, "note": "任意ジェダイ（リーダー）" },
+            { "id": "Any Jedi", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+            { "id": "Any Jedi", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+            { "id": "Any Jedi", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+            { "id": "Any Jedi", "requiredRelicLevel": 0, "isLeader": false, "isAny": true, "note": "任意ジェダイ" }
+          ]
+        }
+      ]
+    }
+  },
+
+  "phases": [
+    {
+      "phase": 1,
+      "name": "Phase 1",
+      "zones": [
+        {
+          "zoneId": "rote_p1_ds",
+          "zoneName": "Mustafar",
+          "missions": [
+            {
+              "missionId": "rote_p1_ds_m1",
+              "missionName": "Combat Restricted Mission 1",
+              "missionType": "combat_restricted",
+              "description": "LV（必須）1体のみ",
+              "squads": [
+                {
+                  "squadId": "P1-ds",
+                  "squadName": "LV solo",
+                  "units": [
+                    { "id": "LORDVADER", "requiredRelicLevel": 5, "isLeader": true, "note": "ベイダー卿" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "zoneId": "rote_p1_neutral",
+          "zoneName": "Corellia",
+          "missions": [
+            {
+              "missionId": "rote_p1_corellia_m1",
+              "missionName": "Special Mission 1",
+              "missionType": "special",
+              "description": "キーラ（必須）、ヤングハンソロ（必須）、任意3体（属性縛りなし）",
+              "squads": [
+                {
+                  "squadId": "P1-sm",
+                  "squadName": "Qiira PT",
+                  "units": [
+                    { "id": "QIIRA", "requiredRelicLevel": 5, "isLeader": true, "note": "キーラ" },
+                    { "id": "YOUNGHANSOLO", "requiredRelicLevel": 5, "isLeader": false, "note": "ヤングハンソロ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p1_corellia_m2",
+              "missionName": "Combat Restricted Mission 1",
+              "missionType": "combat_restricted",
+              "description": "ドクター・アフラ（必須）、任意4体（属性縛りなし）",
+              "squads": [
+                {
+                  "squadId": "P1-cm1",
+                  "squadName": "Doctor Afra PT",
+                  "units": [
+                    { "id": "DOCTORAFRA", "requiredRelicLevel": 5, "isLeader": true, "note": "ドクター・アフラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p1_corellia_m3",
+              "missionName": "Combat Restricted Mission 2",
+              "missionType": "combat_restricted",
+              "description": "ジャバ・ザ・ハット（必須）、任意4体（属性縛りなし）",
+              "squads": [
+                {
+                  "squadId": "P1-cm2",
+                  "squadName": "Jabba PT",
+                  "units": [
+                    { "id": "JABBATHEHUTT", "requiredRelicLevel": 5, "isLeader": true, "note": "ジャバ・ザ・ハット" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "zoneId": "rote_p1_ls",
+          "zoneName": "Coruscant",
+          "missions": [
+            {
+              "missionId": "rote_p1_ls_m1",
+              "missionName": "Combat Restricted Mission 2",
+              "missionType": "combat_restricted",
+              "description": "メイス・ウィンドウ（必須）、キット・フィストー（必須）、任意のジェダイ3体（属性縛りあり）",
+              "squads": [
+                {
+                  "squadId": "P1-cm1",
+                  "squadName": "Mace PT",
+                  "requiredTags": ["Jedi"],
+                  "units": [
+                    { "id": "MAICEWINDU", "requiredRelicLevel": 5, "isLeader": true, "note": "メイス・ウィンドウ" },
+                    { "id": "KITFISTO", "requiredRelicLevel": 5, "isLeader": false, "note": "キット・フィストー" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意ジェダイ" }
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p1_ls_m2",
+              "missionName": "Combat Restricted Mission 2",
+              "missionType": "combat_restricted",
+              "description": "任意のジェダイ5体（属性縛りあり）",
+              "squads": [
+                {
+                  "squadId": "P1-cm1",
+                  "squadName": "Jedi PT",
+                  "requiredTags": ["Jedi"],
+                  "units": [
+                    { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": true, "note": "任意のジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "note": "任意のジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意ジェダイ" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Phase 2",
+      "zones": [
+        {
+          "zoneId": "rote_p2_ds",
+          "zoneName": "Dark Side",
+          "missions": []
+        },
+        {
+          "zoneId": "rote_p2_ls",
+          "zoneName": "Light Side",
+          "missions": []
+        }
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Phase 3",
+      "zones": [
+        {
+          "zoneId": "rote_p3_ds",
+          "zoneName": "Dark Side",
+          "missions": []
+        },
+        {
+          "zoneId": "rote_p3_ls",
+          "zoneName": "Light Side",
+          "missions": []
+        }
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "Phase 4",
+      "zones": [
+        {
+          "zoneId": "rote_p4_ds",
+          "zoneName": "Dark Side",
+          "missions": []
+        },
+        {
+          "zoneId": "rote_p4_ls",
+          "zoneName": "Light Side",
+          "missions": []
+        }
+      ]
+    },
+    {
+      "phase": 5,
+      "name": "Phase 5",
+      "zones": [
+        {
+          "zoneId": "rote_p5_ds",
+          "zoneName": "Dark Side",
+          "missions": []
+        },
+        {
+          "zoneId": "rote_p5_ls",
+          "zoneName": "Light Side",
+          "missions": []
+        }
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Phase 6",
+      "zones": [
+        {
+          "zoneId": "rote_p6_ds",
+          "zoneName": "Dark Side",
+          "missions": []
+        },
+        {
+          "zoneId": "rote_p6_ls",
+          "zoneName": "Light Side",
+          "missions": []
+        }
+      ]
+    }
+  ]
+}

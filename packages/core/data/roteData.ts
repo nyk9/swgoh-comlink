@@ -10,7 +10,7 @@ import type {
 } from "./types.ts";
 
 import platoonsRaw from "./rote-platoons.json" with { type: "json" };
-import specialMissionsRaw from "./rote-special-missions.json" with { type: "json" };
+import specialMissionsRaw from "./rote-restricted-missions.json" with { type: "json" };
 
 // -------------------------------------------------------
 // 小隊データの集約
@@ -47,7 +47,10 @@ function collectPlatoonRequirements(): UnitRequirement[] {
 // -------------------------------------------------------
 
 /**
- * スペシャルミッションJSONからUnitRequirement配列を生成する
+ * スペシャルミッション / 属性限定戦闘ミッションJSONからUnitRequirement配列を生成する
+ *
+ * missionType が "combat_restricted" のミッションは source: "combat_restricted" として扱う。
+ * 省略時・"special" は source: "special_mission" として扱う。
  */
 function collectSpecialMissionRequirements(): UnitRequirement[] {
   const data = specialMissionsRaw as unknown as RoteSpecialMissionsData;
@@ -55,15 +58,22 @@ function collectSpecialMissionRequirements(): UnitRequirement[] {
 
   for (const phase of data.phases) {
     for (const zone of phase.zones) {
-      for (const mission of zone.specialMissions) {
+      for (const mission of zone.missions) {
+        const source =
+          mission.missionType === "combat_restricted"
+            ? "combat_restricted"
+            : "special_mission";
+
         for (const squad of mission.squads) {
           for (const unit of squad.units) {
             requirements.push({
               id: unit.id,
               requiredRelicLevel: unit.requiredRelicLevel,
-              source: "special_mission",
+              source,
               sourceLabel: `${phase.name} > ${zone.zoneName} > ${mission.missionName} > ${squad.squadName}`,
               note: unit.note,
+              ...(unit.isAny === true ? { isAny: true } : {}),
+              ...(squad.requiredTags !== undefined ? { requiredTags: squad.requiredTags } : {}),
             });
           }
         }
