@@ -142,8 +142,8 @@
                   "squadId": "P1-sm",
                   "squadName": "Qiira PT",
                   "units": [
-                    { "id": "QIIRA", "requiredRelicLevel": 5, "isLeader": true, "note": "キーラ" },
-                    { "id": "YOUNGHANSOLO", "requiredRelicLevel": 5, "isLeader": false, "note": "ヤングハンソロ" },
+                    { "id": "QIRA", "requiredRelicLevel": 5, "isLeader": true, "note": "キーラ" },
+                    { "id": "YOUNGHAN", "requiredRelicLevel": 5, "isLeader": false, "note": "ヤングハンソロ" },
                     { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
                     { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
                     { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" }
@@ -161,7 +161,7 @@
                   "squadId": "P1-cm1",
                   "squadName": "Doctor Afra PT",
                   "units": [
-                    { "id": "DOCTORAFRA", "requiredRelicLevel": 5, "isLeader": true, "note": "ドクター・アフラ" },
+                    { "id": "DOCTORAPHRA", "requiredRelicLevel": 5, "isLeader": true, "note": "ドクター・アフラ" },
                     { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
                     { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
                     { "id": "Any", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意キャラ" },
@@ -206,7 +206,7 @@
                   "squadName": "Mace PT",
                   "requiredTags": ["Jedi"],
                   "units": [
-                    { "id": "MAICEWINDU", "requiredRelicLevel": 5, "isLeader": true, "note": "メイス・ウィンドウ" },
+                    { "id": "MACEWINDU", "requiredRelicLevel": 5, "isLeader": true, "note": "メイス・ウィンドウ" },
                     { "id": "KITFISTO", "requiredRelicLevel": 5, "isLeader": false, "note": "キット・フィストー" },
                     { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
                     { "id": "Any Jedi", "requiredRelicLevel": 5, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
@@ -245,13 +245,134 @@
       "zones": [
         {
           "zoneId": "rote_p2_ds",
-          "zoneName": "Dark Side",
-          "missions": []
+          "zoneName": "Geonosis",
+          "missions": [
+            {
+              "missionId": "rote_p2_ds_m1",
+              "missionName": "Combat Restricted Mission 1",
+              "missionType": "combat_restricted",
+              "description": "ジオノージアン",
+              "squads": [
+                {
+                  "squadId": "P2-ds",
+                  "squadName": "Geonosian PT",
+                  "requiredTags": ["Geonosian"],
+                  "units": [
+                    { "id": "GEONOSIANBROODALPHA", "requiredRelicLevel": 6, "isLeader": true, "note": "ジオノージアン・ブルード・アルファ" },
+                    { "id": "GEONOSIANSOLDIER", "requiredRelicLevel": 6, "isLeader": false, "note": "ジオノージアン兵士" },
+                    { "id": "GEONOSIANSPY", "requiredRelicLevel": 6, "isLeader": false, "note": "ジオノージアンスパイ" },
+                    { "id": "SUNFAC", "requiredRelicLevel": 6, "isLeader": false, "note": "サン・ファク" },
+                    { "id": "POGGLETHELESSER", "requiredRelicLevel": 6, "isLeader": false, "note": "ポグル・ザ・レッサー" },
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "zoneId": "rote_p2_neutral",
+          "zoneName": "Felucia",
+          "missions": [
+            {
+              "missionId": "rote_p2_felucia_m1",
+              "missionName": "Combat Restricted Mission 1",
+              "missionType": "combat_restricted",
+              "description": "ヤングランド(必須)+好きなキャラ4体(任意)",
+              "squads": [
+                {
+                  "squadId": "P2-cm",
+                  "squadName": "Young Lando PT",
+                  "units": [
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": true, "note": "任意リーダー" },
+                    { "id": "YOUNGLANDO", "requiredRelicLevel": 6, "isLeader": false, "note": "ヤング・ランド・カルリジアン" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p2_felucia_m2",
+              "missionName": "Combat Restricted Mission 2",
+              "missionType": "combat_restricted",
+              "description": "ホンドーオナカ(必須)+好きなキャラ4体(任意)",
+              "squads": [
+                {
+                  "squadId": "P2-cm",
+                  "squadName": "Hondo PT",
+                  "units": [
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": true, "note": "任意リーダー" },
+                    { "id": "HONDO", "requiredRelicLevel": 6, "isLeader": false, "note": "ホンドー・オナカ" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p2_corellia_m3",
+              "missionName": "Combat Restricted Mission 2",
+              "missionType": "combat_restricted",
+              "description": "ジャバ・ザ・ハット（必須）、任意4体（属性縛りなし）",
+              "squads": [
+                {
+                  "squadId": "P2-cm2",
+                  "squadName": "Jabba PT",
+                  "units": [
+                    { "id": "JABBATHEHUTT", "requiredRelicLevel": 6, "isLeader": true, "note": "ジャバ・ザ・ハット" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            }
+          ]
         },
         {
           "zoneId": "rote_p2_ls",
-          "zoneName": "Light Side",
-          "missions": []
+          "zoneName": "Bracca",
+          "missions": [
+            {
+              "missionId": "rote_p2_bracca_sm1",
+              "missionName": "Special Mission 1",
+              "missionType": "special",
+              "description": "シア（必須）＋JKCK（必須）",
+              "squads": [
+                {
+                  "squadId": "P2-sm",
+                  "squadName": "Cere+JKCK",
+                  "units": [
+                    { "id": "CEREJUNDA", "requiredRelicLevel": 6, "isLeader": true, "note": "シア・ジュンダ" },
+                    { "id": "JEDIKNIGHTCAL", "requiredRelicLevel": 6, "isLeader": false, "note": "ジェダイ・ナイト・カル・ケスティス" },
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p2_ls_m2",
+              "missionName": "Combat Restricted Mission 2",
+              "missionType": "combat_restricted",
+              "description": "任意のジェダイ5体（属性縛りあり）",
+              "squads": [
+                {
+                  "squadId": "P2-cm1",
+                  "squadName": "Jedi PT",
+                  "requiredTags": ["Jedi"],
+                  "units": [
+                    { "id": "Any Jedi", "requiredRelicLevel": 6, "isLeader": true, "note": "任意のジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 6, "isLeader": false, "note": "任意のジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意ジェダイ" },
+                    { "id": "Any Jedi", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意ジェダイ" }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -261,13 +382,195 @@
       "zones": [
         {
           "zoneId": "rote_p3_ds",
-          "zoneName": "Dark Side",
-          "missions": []
+          "zoneName": "Dathomir",
+          "missions": [
+            {
+              "missionId": "rote_p3_ds_sm1",
+              "missionName": "Special Mission 1",
+              "missionType": "special",
+              "description": "メリン（必須）＋ナイトシスター4体（任意）",
+              "squads": [
+                {
+                  "squadId": "P3-sm",
+                  "squadName": "NS",
+                  "requiredTags": ["Nightsister"],
+                  "units": [
+                    { "id": "Any Nightsister", "requiredRelicLevel": 7, "isLeader": true, "note": "任意のナイトシスター" },
+                    { "id": "MERRIN", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "メリン" },
+                    { "id": "Any Nightsister", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のナイトシスター" },
+                    { "id": "Any Nightsister", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のナイトシスター" },
+                    { "id": "Any Nightsister", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のナイトシスター" },
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p3_ds_m1",
+              "missionName": "Combat Restricted Mission 1",
+              "missionType": "combat_restricted",
+              "description": "帝国軍",
+              "squads": [
+                {
+                  "squadId": "P3-ds",
+                  "squadName": "Empire PT",
+                  "requiredTags": ["Empire"],
+                  "units": [
+                    { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": true, "note": "任意の帝国軍" },
+                    { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" },
+                    { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" },
+                    { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" },
+                    { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" },
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p3_ds_m2",
+              "missionName": "Combat Restricted Mission 1",
+              "missionType": "combat_restricted",
+              "description": "ドクター・アフラ（必須）、任意4体（属性縛りなし）",
+              "squads": [
+                {
+                  "squadId": "P3-cm1",
+                  "squadName": "Doctor Afra PT",
+                  "units": [
+                    { "id": "DOCTORAPHRA", "requiredRelicLevel": 7, "isLeader": true, "note": "ドクター・アフラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "zoneId": "rote_p3_neutral",
+          "zoneName": "Tatooine",
+          "missions": [
+            {
+              "missionId": "rote_p3_neutral_sm1",
+              "missionName": "Special Mission 1",
+              "missionType": "special",
+              "description": "大尋問官(必須)+尋問官4体(任意)",
+              "squads": [
+                {
+                  "squadId": "P3-sm",
+                  "squadName": "Inquisitor",
+                  "units": [
+                    { "id": "GRANDINQUISITOR", "requiredRelicLevel": 7, "isLeader": true, "note": "大尋問官" },
+                    { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" },
+                    { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" },
+                    { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" },
+                    { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" },
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p3_neutral_sm2",
+              "missionName": "Special Mission 2",
+              "missionType": "special",
+              "description": "ボ＝カターン（マンダロア）＋ベスカーマンドー＋任意のマンダロリアン3体",
+              "squads": [
+                {
+                  "squadId": "P3-sm",
+                  "squadName": "Mandalorian",
+                  "units": [
+                    { "id": "MANDALORBOKATAN", "requiredRelicLevel": 7, "isLeader": true, "note": "ボ＝カターン（マンダロア）" },
+                    { "id": "THEMANDALORIANBESKARARMOR", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "ベスカーマンドー" },
+                    { "id": "Any Mandalorian", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のマンダロリアン" },
+                    { "id": "Any Mandalorian", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のマンダロリアン" },
+                    { "id": "Any Mandalorian", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のマンダロリアン" },
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p2_tatooine_cm2",
+              "missionName": "Combat Restricted Mission 2",
+              "missionType": "combat_restricted",
+              "description": "ジャバ・ザ・ハット（必須）、任意4体（属性縛りなし）",
+              "squads": [
+                {
+                  "squadId": "P3-cm2",
+                  "squadName": "Jabba PT",
+                  "units": [
+                    { "id": "JABBATHEHUTT", "requiredRelicLevel": 7, "isLeader": true, "note": "ジャバ・ザ・ハット" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p2_tatooine_cm2",
+              "missionName": "Combat Restricted Mission 2",
+              "missionType": "combat_restricted",
+              "description": "フェネック・シャンド（必須）、任意4体（属性縛りなし）",
+              "squads": [
+                {
+                  "squadId": "P3-cm2",
+                  "squadName": "Fennec PT",
+                  "units": [
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": true, "note": "任意キャラ" },
+                    { "id": "FENNECSHAND", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "フェネック・シャンド" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" },
+                    { "id": "Any", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意キャラ" }
+                  ]
+                }
+              ]
+            },
+          ]
         },
         {
           "zoneId": "rote_p3_ls",
-          "zoneName": "Light Side",
-          "missions": []
+          "zoneName": "Kashyyyk",
+          "missions": [
+            {
+              "missionId": "rote_p3_ls_sm1",
+              "missionName": "Special Mission 1",
+              "missionType": "special",
+              "description": "ソウ・ゲレラ（必須）＋任意の反乱軍ファイター4体",
+              "squads": [
+                {
+                  "squadId": "P3-sm",
+                  "squadName": "Saw + rebel figher",
+                  "units": [
+                    { "id": "SAWGERRERA", "requiredRelicLevel": 7, "isLeader": true, "note": "ソウ・ゲレラ" },
+                    { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" },
+                    { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" },
+                    { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" },
+                    { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" },
+                  ]
+                }
+              ]
+            },
+            {
+              "missionId": "rote_p3_ls_cm1",
+              "missionName": "Combat Restricted Mission 1",
+              "missionType": "combat_restricted",
+              "description": "任意のウーキー5体（属性縛りあり）",
+              "squads": [
+                {
+                  "squadId": "P3-cm1",
+                  "squadName": "Wookiee PT",
+                  "requiredTags": ["Wookiee"],
+                  "units": [
+                    { "id": "Any Wookiee", "requiredRelicLevel": 6, "isLeader": true, "note": "任意ののウーキー" },
+                    { "id": "Any Wookiee", "requiredRelicLevel": 6, "isLeader": false, "note": "任意ののウーキー" },
+                    { "id": "Any Wookiee", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意のウーキー" },
+                    { "id": "Any Wookiee", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意のウーキー" },
+                    { "id": "Any Wookiee", "requiredRelicLevel": 6, "isLeader": false, "isAny": true, "note": "任意のウーキー" }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },
