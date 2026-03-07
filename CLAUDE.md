@@ -58,9 +58,9 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
   ↓
 [アライコードを入力（CLI: config.json保存 / Discord: コマンド引数）]
   ↓
-[Comlinkでプレイヤーデータ取得 → GP上位30キャラ + 手動JSONデータを整形]
+[Comlinkでプレイヤーデータ取得 → R5以上全キャラ + 手動JSONデータを整形]
   ↓
-[モード選択（RotE TB / TW / GAC...）→ 目的選択（小隊/通常/スペシャル/GP上げ）]
+[モード選択（RotE TB / TW / GAC...）→ 目的選択（小隊/通常/スペシャル/ギルド報酬の向上）]
   ↓
 [システムプロンプト組み立て → AI APIに投げる]
   ↓
@@ -93,8 +93,9 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 
 #### 2. スペシャルミッション情報
 
-- スペシャルミッションで使うキャラ＋編成一覧 + 必要レリック数
-- Comlinkの `territoryBattleDefinition` + `campaign` から取得
+- スペシャルミッションで使うキャラ＋編成一覧 + 必要レリック数 + クリア報酬
+- `rote-restricted-missions.json` で手動管理（スペシャル＋属性限定戦闘ミッションを統合）
+- `SpecialMission` 型に `rewards?: SpecialMissionReward[]` フィールドあり（実データ入力中）
 
 #### 3. 通常ミッション情報（後回し）
 
@@ -155,8 +156,8 @@ swgoh-comlink/
 │   │   │   ├── providers.ts     # AIプロバイダー管理（Google / Anthropic）
 │   │   │   └── index.ts
 │   │   └── data/
-│   │       ├── rote-platoons.json          # RotE TB 小隊情報（手動管理）
-│   │       ├── rote-special-missions.json  # RotE TB スペシャルミッション（手動管理）
+│   │       ├── rote-platoons.json            # RotE TB 小隊情報（手動管理・実データ未入力）
+│   │       ├── rote-restricted-missions.json # RotE TB スペシャル＋属性限定戦闘ミッション（手動管理・実データ入力中）
 │   │       ├── roteData.ts      # 手動JSONの読み込み・集約
 │   │       ├── types.ts         # 型定義
 │   │       └── index.ts
@@ -214,7 +215,7 @@ swgoh-comlink/
                Y(Enter) → そのまま使用 / n → 新しいアライコードを入力して保存
 
 ② プレイヤーデータ取得・整形
-  → GP上位30キャラ + レリック値 を抽出
+  → R5以上全キャラ + レリック値 を抽出
   → 手動JSONデータ（RotE要件等）も合わせて読み込む
 
 ③ モード選択（選択式）
@@ -244,14 +245,26 @@ swgoh-comlink/
 ```
 [システムプロンプト（セッション開始時に1回組み立てる）]
 - SWGoH専門家としての役割定義
-- プレイヤー情報（GP上位30キャラ + レリック値）
+- プレイヤー情報（R5以上全キャラ + レリック値）
 - 手動JSONデータ（選択されたモードの要件・空でもOK）
 - 選択されたモード・目的・補足
+- purpose別ガイドライン（ROTE_PURPOSE_CONFIG から自動挿入）
 
 [会話履歴（軽量版・毎回積み上げる）]
 - user / assistant のやり取りをそのまま渡す
 - 将来的には「決定事項メモ管理」方式に移行予定
 ```
+
+#### purpose別ガイドラインの設計方針
+
+`packages/core/advisor/prompt.ts` の `ROTE_PURPOSE_CONFIG` に各purposeの定義を一元管理している。
+purposeを追加・変更する場合はここだけ編集すればよい。
+
+| フィールド       | 用途                                                                 |
+| ---------------- | -------------------------------------------------------------------- |
+| `label`          | CLI・Discordの選択肢UI表示名（`ROTE_PURPOSE_LABELS` でエクスポート） |
+| `guidelines`     | システムプロンプトの「アドバイスの方針」に追加する目的固有の指示     |
+| `initialMessage` | セッション開始時にAIへ送る最初のユーザーメッセージ                   |
 
 ---
 
@@ -260,16 +273,16 @@ swgoh-comlink/
 ### コマンド仕様
 
 ```
-/advice allycode:<9桁> [mode:<rote|tw|gac>] [purpose:<platoon|combat_mission|special_mission|gp>] [show_prompt:<true|false>]
+/advice allycode:<9桁> [mode:<rote|tw|gac>] [purpose:<platoon|combat_mission|special_mission|guild_rewards>] [show_prompt:<true|false>]
 ```
 
 - `allycode`: 必須。プレイヤーのアライコード
 - `mode`: 省略時はプレイヤーデータの表示のみ
 - `purpose`: `mode:rote` のときのみ有効。省略時は `platoon` がデフォルト
-  - `platoon`: 小隊配置の最大化
+  - `platoon`: 小隊配置（Platoon）の最大化
   - `combat_mission`: 通常戦闘ミッションへの貢献
   - `special_mission`: スペシャルミッションのクリア
-  - `gp`: ギルド報酬の向上（小隊・ミッション両面への貢献を最大化）
+  - `guild_rewards`: ギルド報酬の向上（小隊・CM・SMの3軸でTPと追加報酬を最大化）
 - `show_prompt`: [DEBUG] AIに渡したシステムプロンプトをスレッド内に出力する
 
 ### 動作フロー
@@ -304,11 +317,13 @@ swgoh-comlink/
 
 1. **手動JSONへの実データ入力**（← 継続残タスク）
    - `packages/core/data/rote-platoons.json`（小隊情報・実データ未入力）
-   - `packages/core/data/rote-special-missions.json`（スペシャル＋属性限定戦闘ミッション・実データ入力中）
+   - `packages/core/data/rote-restricted-missions.json`（スペシャル＋属性限定戦闘ミッション・実データ入力中）
+   - `SpecialMission.rewards` フィールドへのSMクリア報酬データ入力（型定義済み・実データ未入力）
 
 2. **アドバイス精度の継続改善**
    - 手動JSONの実データを充実させてAIへの情報精度を上げる
-   - プロンプトのチューニング
+   - Discord上でのデバッグ・テストを継続（`show_prompt` オプション活用）
+   - プロンプトのチューニング（RotE TBのTP/星数/報酬メカニズムを正確に伝える）
 
 3. **Phase 3: Web版の設計・実装**
 
