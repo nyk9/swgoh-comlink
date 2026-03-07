@@ -9,6 +9,23 @@ export { formatPlayer, filterUnitsByIds, filterUnitsByMinRelic, getTopNUnits, ge
 
 export { fetchRoteData, clearRoteDataCache } from "./fetchRoteData.ts";
 
+export { fetchGLEventData, fetchAllGLEventData, clearGLEventDataCache } from "./fetchGLEventData.ts";
+
+export { parseGLEventData, parseAllGLEventData, getGLCharacterId } from "./parseGLEventData.ts";
+
+export {
+  checkTierRequirements,
+  checkGLEventRequirements,
+  formatGLEventStatus,
+} from "./checkGLEventRequirements.ts";
+
+export type {
+  UnitRequirementStatus,
+  CategoryRequirementStatus,
+  TierRequirementStatus,
+  GLEventRequirementStatus,
+} from "./checkGLEventRequirements.ts";
+
 export type {
   ComlinkPlayerResponse,
   ComlinkUnit,
@@ -22,4 +39,6 @@ export type {
   RoteGameData,
   RoteSpecialMissionData,
   RoteSMReward,
+  GLEventData,
+  GLEventTierData,
 } from "./types.ts";
