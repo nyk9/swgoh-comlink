@@ -1,7 +1,67 @@
 /**
  * Comlink API レスポンスの型定義
- * 必要最低限のフィールドのみ定義する（トークン節約のため）
+ * 必要最小限のフィールドのみ定義する（トークン節約のため）
  */
+
+// -------------------------------------------------------
+// /data エンドポイント: キャンペーン関連の共通型
+// -------------------------------------------------------
+
+/**
+ * entryCategoryAllowed（キャンペーン・イベント参加要件）
+ * GL イベント・RotE TB 等で使用される統一的な要件定義
+ */
+export interface ComlinkEntryCategoryAllowed {
+  /** 必須キャラ ID リスト */
+  mandatoryRosterUnit?: Array<{ id: string; slot: number }>;
+  /** 参加可能なカテゴリ ID リスト */
+  categoryId: string[];
+  /** リーダー指定用カテゴリ ID リスト（オプション） */
+  commanderCategoryId?: string[];
+  /** 除外カテゴリ ID リスト（オプション） */
+  excludeCategoryId?: string[];
+  /** 最低スター数 */
+  minimumUnitRarity: number;
+  /** 最低レリック Tier（内部値: 1 = レリック未解放、7 = R5等） */
+  minimumRelicTier: number;
+  /** 最大編成人数 */
+  maximumAllowedUnitQuantity: number;
+  /** 最小編成人数 */
+  minimumRequiredUnitQuantity: number;
+  /** その他のメタデータ（汎用） */
+  [key: string]: any;
+}
+
+/** campaignNodeMission の1エントリ */
+export interface ComlinkCampaignNodeMission {
+  id: string;
+  entryCategoryAllowed?: ComlinkEntryCategoryAllowed | null;
+}
+
+/** campaignNode の1エントリ */
+export interface ComlinkCampaignNode {
+  id: string;
+  campaignNodeMission?: ComlinkCampaignNodeMission[];
+}
+
+/** campaignMap の1エントリ */
+export interface ComlinkCampaignMap {
+  id: string;
+  campaignNodeDifficultyGroup?: Array<{
+    campaignNode?: ComlinkCampaignNode[];
+  }>;
+}
+
+/** campaign コレクションの1エントリ */
+export interface ComlinkCampaign {
+  id: string;
+  campaignMap?: ComlinkCampaignMap[];
+}
+
+/** /data requestSegment:4 のレスポンス（campaign部分のみ） */
+export interface ComlinkDataSegment4Response {
+  campaign?: ComlinkCampaign[];
+}
 
 // -------------------------------------------------------
 // /data エンドポイント: RotE TB 関連の生データ型
@@ -10,7 +70,7 @@
 /**
  * minimumRelicTier の内部値 → 実際のレリックレベルへの変換
  * Comlinkの内部値は +2 オフセット（currentTier と同じ仕様）
- * 例: 7 -> R5, 9 -> R7, 10 -> R8, 11 -> R9
+ * 例: 1 → R0, 7 → R5, 9 → R7, 10 → R8, 11 → R9
  */
 export const COMLINK_RELIC_TIER_OFFSET = 2;
 
@@ -74,47 +134,6 @@ export interface ComlinkDataSegment2Response {
   territoryBattleDefinition: ComlinkTerritoryBattleDefinition[];
 }
 
-/** entryCategoryAllowed（ミッション参加要件） */
-export interface ComlinkEntryCategoryAllowed {
-  categoryId: string[];
-  mandatoryRosterUnit: Array<{ id: string; slot: number }>;
-  minimumUnitRarity: number;
-  minimumRelicTier: number;
-  maximumAllowedUnitQuantity: number;
-  minimumRequiredUnitQuantity: number;
-}
-
-/** campaignNodeMission の1エントリ */
-export interface ComlinkCampaignNodeMission {
-  id: string;
-  entryCategoryAllowed: ComlinkEntryCategoryAllowed | null;
-}
-
-/** campaignNode の1エントリ */
-export interface ComlinkCampaignNode {
-  id: string;
-  campaignNodeMission: ComlinkCampaignNodeMission[];
-}
-
-/** campaignMap の1エントリ */
-export interface ComlinkCampaignMap {
-  id: string;
-  campaignNodeDifficultyGroup: Array<{
-    campaignNode: ComlinkCampaignNode[];
-  }>;
-}
-
-/** campaign コレクションの1エントリ */
-export interface ComlinkCampaign {
-  id: string;
-  campaignMap: ComlinkCampaignMap[];
-}
-
-/** /data requestSegment:4 のレスポンス（campaign部分のみ） */
-export interface ComlinkDataSegment4Response {
-  campaign: ComlinkCampaign[];
-}
-
 // -------------------------------------------------------
 // 整形後の RotE TB データ型
 // -------------------------------------------------------
@@ -164,6 +183,44 @@ export interface RoteGameData {
     /** 星1/2/3 それぞれに必要なギルドスコア */
     thresholds: [number, number, number];
   }>;
+}
+
+// -------------------------------------------------------
+// 整形後の GL イベントデータ型
+// -------------------------------------------------------
+
+/**
+ * GL イベント 1Tier 分の情報（Comlinkから自動取得）
+ */
+export interface GLEventTierData {
+  /** Tier 番号（1〜6等） */
+  tierNumber: number;
+  /** Tier ID（例: "TIER01", "TIER02"） */
+  tierId: string;
+  /** 必須キャラのユニットID リスト */
+  mandatoryUnitIds: string[];
+  /** 参加可能カテゴリID リスト */
+  categoryIds: string[];
+  /** 最低スター数 */
+  minimumStars: number;
+  /** 最低レリックレベル（実際のR値） */
+  minimumRelicLevel: number;
+  /** 編成最小人数 */
+  minUnitCount: number;
+  /** 編成最大人数 */
+  maxUnitCount: number;
+}
+
+/**
+ * GL イベント全体の情報（Comlinkから自動取得）
+ */
+export interface GLEventData {
+  /** GL キャラクター ID（例: "JABBATHEHUTT", "GLREY"） */
+  characterId: string;
+  /** GL イベント node ID（例: "CAMPAIGN_EVENT_JABBA_GALACTICLEGEND"） */
+  nodeId: string;
+  /** 全 Tier の要件 */
+  tiers: GLEventTierData[];
 }
 
 // -------------------------------------------------------
