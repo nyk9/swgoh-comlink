@@ -64,19 +64,19 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
   ↓
 [システムプロンプト組み立て → AI APIに投げる]
   ↓
-[初回アドバイス表示 → 掘り下げチャット（CLI: /exit で終了 / Discord: スレッドで継続予定）]
+[初回アドバイス表示 → 掘り下げチャット（CLI: /exit で終了 / Discord: スレッドで継続）]
 ```
 
 ---
 
 ## データソース
 
-| データ                                               | 取得方法                                         | 備考                                    |
-| ---------------------------------------------------- | ------------------------------------------------ | --------------------------------------- |
-| プレイヤーのキャラ育成状況（レリック数等）           | Comlink `/player` endpoint                       |                                         |
-| スペシャルミッション・コンバットミッションの編成要件 | Comlink `territoryBattleDefinition` + `campaign` |                                         |
-| 小隊（Platoon）に必要なキャラ一覧                    | **手動JSON管理**                                 | サーバー側管理のためComlinkでは取得不可 |
-| アドバイス生成                                       | AI API（Google Gemini / Anthropic Claude）       |                                         |
+| データ                                                 | 取得方法                                         | 備考                                    |
+| ------------------------------------------------------ | ------------------------------------------------ | --------------------------------------- |
+| プレイヤーのキャラ育成状況（レリック数等）             | Comlink `/player` endpoint                       |                                         |
+| スペシャルミッション・属性限定戦闘ミッションの編成要件 | Comlink `territoryBattleDefinition` + `campaign` | `rote-special-missions.json` で統合管理 |
+| 小隊（Platoon）に必要なキャラ一覧                      | **手動JSON管理**                                 | サーバー側管理のためComlinkでは取得不可 |
+| アドバイス生成                                         | AI API（Google Gemini / Anthropic Claude）       |                                         |
 
 ---
 
@@ -221,7 +221,7 @@ swgoh-comlink/
   → 1) RotE TB  2) TW  3) GAC  ...
 
 ④ 目的選択（選択式・モードによって変わる）
-  → 1) 小隊配置  2) 通常戦闘  3) スペシャルミッション  4) GP上げ全般  ...
+  → 1) 小隊配置  2) 通常戦闘  3) スペシャルミッション  4) ギルド報酬の向上  ...
 
 ⑤ 自由追記（任意）
   → 「補足があれば入力してください（Enterでスキップ）: 」
@@ -260,12 +260,17 @@ swgoh-comlink/
 ### コマンド仕様
 
 ```
-/advice allycode:<9桁> [mode:<rote|tw|gac>] [purpose:<platoon|combat_mission|special_mission|gp>]
+/advice allycode:<9桁> [mode:<rote|tw|gac>] [purpose:<platoon|combat_mission|special_mission|gp>] [show_prompt:<true|false>]
 ```
 
 - `allycode`: 必須。プレイヤーのアライコード
 - `mode`: 省略時はプレイヤーデータの表示のみ
 - `purpose`: `mode:rote` のときのみ有効。省略時は `platoon` がデフォルト
+  - `platoon`: 小隊配置の最大化
+  - `combat_mission`: 通常戦闘ミッションへの貢献
+  - `special_mission`: スペシャルミッションのクリア
+  - `gp`: ギルド報酬の向上（小隊・ミッション両面への貢献を最大化）
+- `show_prompt`: [DEBUG] AIに渡したシステムプロンプトをスレッド内に出力する
 
 ### 動作フロー
 
@@ -273,16 +278,19 @@ swgoh-comlink/
 ① /advice コマンド受信
   → interaction.deferReply()（処理中表示）
 
-② Comlinkからプレイヤーデータ取得・整形
+② Comlinkからプレイヤーデータ取得・整形（R5以上全キャラ）
 
 ③ mode が指定されていない場合
-  → GP上位30キャラをテキスト表示して終了
+  → GP上位キャラのデータをテキスト表示して終了
 
 ④ mode が指定されている場合
   → core/advisor を呼び出してAIアドバイスを生成
   → 2000文字超の場合はメッセージを分割して送信（editReply + followUp）
 
-⑤ （実装予定）スレッドを自動作成して会話継続できるようにする
+⑤ スレッドを自動作成して会話継続
+  → スレッドIDをキーにセッション（システムプロンプト + 会話履歴）をメモリ管理
+  → スレッド内のメッセージイベントを購読してBotが返答し続ける
+  → セッションTTLは1時間（Bot再起動でリセット）
 ```
 
 ### COMLINK_URL について
@@ -294,14 +302,15 @@ swgoh-comlink/
 
 ## 今後の次のアクション
 
-1. **Discord スレッドでの会話継続対応**（← 現在のフォーカス）
-   - `/advice` 実行後にスレッドを自動作成
-   - スレッド内でユーザーのメッセージに返答し続ける
-   - 会話セッション（システムプロンプト + 履歴）をメモリで管理
+1. **手動JSONへの実データ入力**（← 継続残タスク）
+   - `packages/core/data/rote-platoons.json`（小隊情報・実データ未入力）
+   - `packages/core/data/rote-special-missions.json`（スペシャル＋属性限定戦闘ミッション・実データ入力中）
 
-2. **手動JSONへの実データ入力**（← Phase 1 からの残タスク）
-   - `packages/core/data/rote-platoons.json`
-   - `packages/core/data/rote-special-missions.json`
+2. **アドバイス精度の継続改善**
+   - 手動JSONの実データを充実させてAIへの情報精度を上げる
+   - プロンプトのチューニング
+
+3. **Phase 3: Web版の設計・実装**
 
 ---
 
@@ -335,7 +344,7 @@ $ bun run deploy-commands
 | サービス名      | 役割                                         | 状態               |
 | --------------- | -------------------------------------------- | ------------------ |
 | `swgoh-comlink` | Comlink本体。プレイヤーデータ等を取得        | **使用中**         |
-| `discord-bot`   | Discord bot本体                              | **使用中**         |
+| `discord-bot`   | Discord bot本体（スレッド会話継続対応済み）  | **使用中**         |
 | `swgoh-stats`   | GP・スタット計算（`statCalcData/` を参照）   | 将来使う可能性あり |
 | `swgoh-ae`      | Asset Explorer（キャラ画像等のアセット取得） | 今は不要           |
 | `fake.help`     | 非推奨・コメントアウト済み                   | 不要               |
