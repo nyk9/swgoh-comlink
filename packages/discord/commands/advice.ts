@@ -252,6 +252,7 @@ export async function execute(
       characterGalacticPower: player.characterGalacticPower,
       shipGalacticPower: player.shipGalacticPower,
       topUnits,
+      allUnitsMap: player.units,
       selection,
       ...(roteRequirements !== undefined ? { roteRequirements } : {}),
       ...(maxRelicRequirementsMap !== undefined ? { maxRelicRequirementsMap } : {}),

@@ -7,7 +7,7 @@
  * - 会話履歴は呼び出し元（client.ts）が管理する
  */
 
-import type { FormattedUnit } from "../comlink/types.ts";
+import type { FormattedUnit, FormattedPlayer } from "../comlink/types.ts";
 import type { UnitRequirement } from "../data/types.ts";
 
 // -------------------------------------------------------
@@ -48,8 +48,10 @@ export interface ChatSystemPromptInput {
   characterGalacticPower: number;
   /** 艦隊GP */
   shipGalacticPower: number;
-  /** GP上位30キャラ（強さ順） */
+  /** R5以上キャラ一覧（AIへのアドバイス用・レリック降順） */
   topUnits: FormattedUnit[];
+  /** 全キャラのMap（要件達成状況チェック用・R5未満も含む） */
+  allUnitsMap: FormattedPlayer["units"];
   /** 選択されたモードと目的 */
   selection: ModeSelection;
   /** ユーザーが入力した自由記述の補足（任意） */
@@ -87,14 +89,13 @@ function formatTopUnits(topUnits: FormattedUnit[]): string {
  * RotE TB 要件達成状況テキストを生成する
  */
 function formatRoteStatus(
-  topUnits: FormattedUnit[],
+  allUnitsMap: FormattedPlayer["units"],
   maxRelicRequirementsMap: Map<string, number>,
 ): string {
   if (maxRelicRequirementsMap.size === 0) {
     return "  （RotE TB要件データ未入力。R5以上キャラを元にアドバイスしてください）";
   }
 
-  const topUnitMap = new Map(topUnits.map((u) => [u.id, u]));
   const lines: string[] = [];
 
   const notReady: string[] = [];
@@ -107,7 +108,7 @@ function formatRoteStatus(
       continue;
     }
 
-    const unit = topUnitMap.get(unitId);
+    const unit = allUnitsMap.get(unitId);
     const currentRelic = unit?.relicLevel ?? 0;
     const currentGear = unit?.gearLevel ?? 0;
 
@@ -196,6 +197,7 @@ export function buildSystemPrompt(input: ChatSystemPromptInput): string {
     characterGalacticPower,
     shipGalacticPower,
     topUnits,
+    allUnitsMap,
     selection,
     userNote,
     roteRequirements,
@@ -207,7 +209,7 @@ export function buildSystemPrompt(input: ChatSystemPromptInput): string {
 
   const roteStatusText =
     selection.mode === "rote" && maxRelicRequirementsMap != null
-      ? formatRoteStatus(topUnits, maxRelicRequirementsMap)
+      ? formatRoteStatus(allUnitsMap, maxRelicRequirementsMap)
       : null;
 
   const requirementsCount = roteRequirements?.length ?? 0;

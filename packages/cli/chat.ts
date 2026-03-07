@@ -127,6 +127,7 @@ function buildSystemPromptInput(
     characterGalacticPower: player.characterGalacticPower,
     shipGalacticPower: player.shipGalacticPower,
     topUnits,
+    allUnitsMap: player.units,
     selection,
     userNote,
     roteRequirements,
