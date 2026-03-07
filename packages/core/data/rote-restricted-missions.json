@@ -262,7 +262,7 @@
                     { "id": "GEONOSIANSOLDIER", "requiredRelicLevel": 6, "isLeader": false, "note": "ジオノージアン兵士" },
                     { "id": "GEONOSIANSPY", "requiredRelicLevel": 6, "isLeader": false, "note": "ジオノージアンスパイ" },
                     { "id": "SUNFAC", "requiredRelicLevel": 6, "isLeader": false, "note": "サン・ファク" },
-                    { "id": "POGGLETHELESSER", "requiredRelicLevel": 6, "isLeader": false, "note": "ポグル・ザ・レッサー" },
+                    { "id": "POGGLETHELESSER", "requiredRelicLevel": 6, "isLeader": false, "note": "ポグル・ザ・レッサー" }
                   ]
                 }
               ]
@@ -347,7 +347,7 @@
                   "squadName": "Cere+JKCK",
                   "units": [
                     { "id": "CEREJUNDA", "requiredRelicLevel": 6, "isLeader": true, "note": "シア・ジュンダ" },
-                    { "id": "JEDIKNIGHTCAL", "requiredRelicLevel": 6, "isLeader": false, "note": "ジェダイ・ナイト・カル・ケスティス" },
+                    { "id": "JEDIKNIGHTCAL", "requiredRelicLevel": 6, "isLeader": false, "note": "ジェダイ・ナイト・カル・ケスティス" }
                   ]
                 }
               ]
@@ -399,7 +399,7 @@
                     { "id": "MERRIN", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "メリン" },
                     { "id": "Any Nightsister", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のナイトシスター" },
                     { "id": "Any Nightsister", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のナイトシスター" },
-                    { "id": "Any Nightsister", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のナイトシスター" },
+                    { "id": "Any Nightsister", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のナイトシスター" }
                   ]
                 }
               ]
@@ -419,7 +419,7 @@
                     { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" },
                     { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" },
                     { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" },
-                    { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" },
+                    { "id": "Any Empire", "requiredRelicLevel": 7, "isLeader": false, "note": "任意の帝国軍" }
                   ]
                 }
               ]
@@ -463,7 +463,7 @@
                     { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" },
                     { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" },
                     { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" },
-                    { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" },
+                    { "id": "Any Inquisitor", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の尋問官" }
                   ]
                 }
               ]
@@ -482,7 +482,7 @@
                     { "id": "THEMANDALORIANBESKARARMOR", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "ベスカーマンドー" },
                     { "id": "Any Mandalorian", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のマンダロリアン" },
                     { "id": "Any Mandalorian", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のマンダロリアン" },
-                    { "id": "Any Mandalorian", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のマンダロリアン" },
+                    { "id": "Any Mandalorian", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意のマンダロリアン" }
                   ]
                 }
               ]
@@ -524,7 +524,7 @@
                   ]
                 }
               ]
-            },
+            }
           ]
         },
         {
@@ -545,7 +545,7 @@
                     { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" },
                     { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" },
                     { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" },
-                    { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" },
+                    { "id": "Any Rebel Fighter", "requiredRelicLevel": 7, "isLeader": false, "isAny": true, "note": "任意の反乱軍ファイター" }
                   ]
                 }
               ]
