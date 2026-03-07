@@ -511,3 +511,138 @@ Step 1（土台）
 - **Step 3**: 実際のプレイヤーJSONを見てレリック情報のフィールド名を確認する
 - **Step 4**: RotE TBの小隊・スペシャルミッションのキャラ一覧をゲーム知識を元に手動で整理する
 - **Step 5**: Claude APIを叩きながらプロンプトを反復して改善する
+
+---
+
+## Jabba GL 解放要件実装（✅ 完成・テスト済み）
+
+### 2025-01 実装概要
+
+**課題**: Jabba GL（および他の GL）の解放イベント参加条件を AI に渡して、プレイヤーが何を育成すればよいかアドバイスできるようにしたい
+
+**解決方法**: Comlink の `/data segment:4` (campaign) から `EVENTS > GALACTIC > CAMPAIGN_EVENT_JABBA_GALACTICLEGEND` を取得して、各 Tier の参加要件（必須キャラ、カテゴリタグ、スター数、レリック数等）を自動抽出する
+
+### 実装済み機能
+
+#### 1. 型定義の統一化（`packages/core/comlink/types.ts`）
+
+- `ComlinkEntryCategoryAllowed` を統一的に定義（GL イベント・RotE TB 両方で使用）
+- `GLEventData` / `GLEventTierData` を新規定義
+- Tier ごとに `mandatoryUnitIds`, `categoryIds`, `minimumStars`, `minimumRelicLevel` 等を保持
+
+#### 2. GL イベントデータパーサー（`packages/core/comlink/parseGLEventData.ts`）
+
+- `parseGLEventData(data, nodeId)` : 特定の GL イベント node ID から Tier 情報を抽出
+- `parseAllGLEventData(data)` : 全 GL イベント（Rey, Kylo Ren, Luke, Palpatine, Kenobi, Vader, Leia, Ahsoka, Hondo）を一括抽出
+- `getGLCharacterId(nodeId)` : node ID から GL キャラクター ID への逆引きマッピング
+
+**対応している GL イベント（計10種類）**:
+
+- Jabba the Hutt (CAMPAIGN_EVENT_JABBA_GALACTICLEGEND, 5 Tier)
+- Rey (CAMPAIGN_EVENT_REY_GALACTICLEGEND, 6 Tier)
+- Kylo Ren (CAMPAIGN_EVENT_KYLOREN_GALACTICLEGEND, 6 Tier)
+- Luke Skywalker (CAMPAIGN_EVENT_LUKE_GALACTICLEGEND, 6 Tier)
+- Sith Eternal Emperor (CAMPAIGN_EVENT_SITHETERNALEMPEROR_GALACTICLEGEND, 6 Tier)
+- Kenobi (CAMPAIGN_EVENT_KENOBI_GALACTICLEGEND, 6 Tier)
+- Darth Vader (CAMPAIGN_EVENT_VADER_GALACTICLEGEND, 6 Tier)
+- Leia Organa (CAMPAIGN_EVENT_LEIAORGANA_GALACTICLEGEND, 6 Tier)
+- Ahsoka Tano (CAMPAIGN_EVENT_AHSOKATANO_GALACTICLEGEND, 6 Tier)
+- Hondo Ohnaka (CAMPAIGN_EVENT_HONDOOHNAKA_GALACTICLEGEND, 6 Tier)
+
+#### 3. GL イベントデータ取得関数（`packages/core/comlink/fetchGLEventData.ts`）
+
+- `fetchGLEventData(nodeId)` : 指定した GL イベントデータを取得（キャッシュ付き）
+- `fetchAllGLEventData()` : 全 GL イベントを取得（キャッシュ付き）
+- `clearGLEventDataCache()` : キャッシュをクリア
+
+#### 4. プレイヤーデータとの照合・判定（`packages/core/comlink/checkGLEventRequirements.ts`）
+
+- `checkTierRequirements(tier, player)` : 特定 Tier をプレイヤーがクリアできるか判定
+- `checkGLEventRequirements(glEvent, player)` : GL イベント全体（全 Tier）の進捗を判定
+- `formatGLEventStatus(status)` : 判定結果をテキストで整形表示
+
+**判定内容**:
+
+- 各 Tier ごとに「クリア可能か」を判定
+- 不足しているユニット・レリック数をリスト化
+- 「最後にクリアできる Tier 番号」と「全 Tier クリア可能か」を判定
+
+### Jabba GL 解放要件（実際のデータ）
+
+```
+TIER01: HUMANTHUG, GAMORREANGUARD (3人編成, 最低8つ星, R0以上)
+TIER02: BOBAFETT, HUMANTHUG (4人編成, 最低8つ星, R0以上)
+TIER03: JEDIKNIGHTLUKE, GAMORREANGUARD (2人編成, 最低8つ星, R0以上)
+TIER04: BOBAFETT, HUMANTHUG (3人編成, 最低8つ星, R0以上)
+TIER05: JABBATHEHUTT, GAMORREANGUARD, HUMANTHUG (4人編成, 最低8つ星, R0以上)
+```
+
+### テスト結果
+
+実装完了後、実プレイヤーデータ (allycode: 445833733) でテスト実施
+
+**Jabba GL 現在の進捗**:
+
+- 全 Tier クリア不可（TIER01 の時点で HUMANTHUG, GAMORREANGUARD が7つ星で足りない）
+- 詳細な不足アイテムを自動判定・表示可能
+
+### 今後の拡張方針
+
+#### 短期（すぐやる）
+
+1. **カテゴリタグ → ユニット ID の自動逆引き**
+   - 現在は `selftag_XXX` の形式からユニット ID を抽出している（簡易実装）
+   - Comlink の `unit` コレクション（segment:3 or 6）から正式な categoryId → unitId マッピングを取得して精度を上げる
+
+2. **AI プロンプトへの統合**
+   - GL イベント要件データを advisor のシステムプロンプトに含める
+   - 「Jabba GL を解放するには何をすべきか」というアドバイスを AI に生成させる
+
+#### 中期
+
+3. **他の GL イベント対応**
+   - 本実装は既に全 GL イベントに対応しているため、追加実装は不要
+   - 各 GL のプロンプト別ガイドラインを追加する程度
+
+4. **ユニットタグの完全マッピング**
+   - Comlink から取得した `unit` データから `categoryId` ごとにユニット一覧を自動生成
+   - `packages/core/comlink/getUnitsByCategory.ts` を新規作成
+
+### 技術的ノート
+
+**Comlinkで取得できる情報**:
+
+- 参加要件：`entryCategoryAllowed` フィールド
+  - `mandatoryRosterUnit[]` : 必須キャラ
+  - `categoryId[]` : 参加可能なカテゴリタグ
+  - `minimumUnitRarity` : 最低スター数
+  - `minimumRelicTier` : 最低レリック Tier（内部値）
+  - `maximumAllowedUnitQuantity` : 最大編成人数
+  - `minimumRequiredUnitQuantity` : 最小編成人数
+
+**Comlinkで取得できない情報**:
+
+- 該当なし（全てのパラメータが自動取得可能）
+
+**内部Tier値の変換**:
+
+```
+minimumRelicTier の内部値 → 実際のレリックレベル
+1 → R0, 7 → R5, 9 → R7, 10 → R8, 11 → R9
+変換式: (internalTier <= 2) ? 0 : (internalTier - 2)
+```
+
+### ファイル一覧（新規作成・修正）
+
+新規作成:
+
+- `packages/core/comlink/parseGLEventData.ts` (195 行)
+- `packages/core/comlink/fetchGLEventData.ts` (100 行)
+- `packages/core/comlink/checkGLEventRequirements.ts` (349 行)
+- `api-test/test-gl-event-data.ts` (65 行)
+- `api-test/test-gl-event-requirements.ts` (93 行)
+
+修正:
+
+- `packages/core/comlink/types.ts` : GL イベント型定義を追加、重複型をマージ
+- `packages/core/comlink/index.ts` : 新しい export を追加
