@@ -7,6 +7,8 @@ export type { ComlinkClientConfig } from "./client.ts";
 
 export { formatPlayer, filterUnitsByIds, filterUnitsByMinRelic, getTopNUnits, getUnitsAboveMinRelic } from "./formatPlayer.ts";
 
+export { fetchRoteData, clearRoteDataCache } from "./fetchRoteData.ts";
+
 export type {
   ComlinkPlayerResponse,
   ComlinkUnit,
@@ -17,4 +19,7 @@ export type {
   RelicTier,
   GearLevel,
   StarLevel,
+  RoteGameData,
+  RoteSpecialMissionData,
+  RoteSMReward,
 } from "./types.ts";

@@ -15,7 +15,7 @@ import type { ChatMessage } from "../core/advisor/client.ts";
 import type { ModeSelection } from "../core/advisor/prompt.ts";
 import { continueChat } from "../core/advisor/client.ts";
 import { buildSystemPrompt, buildInitialUserMessage } from "../core/advisor/prompt.ts";
-import { getAllRoteRequirements, getMaxRelicRequirementsMap } from "../core/data/roteData.ts";
+import { fetchRoteData } from "../core/comlink/index.ts";
 import { getUnitsAboveMinRelic } from "../core/comlink/formatPlayer.ts";
 import { select, askOptional, askLine } from "./selector.ts";
 import type { SelectOption } from "./selector.ts";
@@ -47,6 +47,8 @@ export interface ChatSessionConfig {
   player: FormattedPlayer;
   /** 最大出力トークン数 */
   maxOutputTokens?: number;
+  /** ComlinkのURL設定（省略時: http://localhost:5001） */
+  comlinkBaseUrl?: string;
 }
 
 // -------------------------------------------------------
@@ -110,13 +112,9 @@ function buildSystemPromptInput(
   player: FormattedPlayer,
   selection: ModeSelection,
   userNote: string | undefined,
+  roteGameData?: Awaited<ReturnType<typeof fetchRoteData>>,
 ) {
   const topUnits = getUnitsAboveMinRelic(player, MIN_RELIC_FOR_ADVICE);
-
-  const roteRequirements =
-    selection.mode === "rote" ? getAllRoteRequirements() : undefined;
-  const maxRelicRequirementsMap =
-    selection.mode === "rote" ? getMaxRelicRequirementsMap() : undefined;
 
   return {
     playerName: player.name,
@@ -130,8 +128,7 @@ function buildSystemPromptInput(
     allUnitsMap: player.units,
     selection,
     userNote,
-    roteRequirements,
-    maxRelicRequirementsMap,
+    ...(roteGameData !== undefined ? { roteGameData } : {}),
   };
 }
 
@@ -173,7 +170,7 @@ function printExitHint(): void {
  * 4. 掘り下げチャット（/exit で終了）
  */
 export async function runChatSession(config: ChatSessionConfig): Promise<void> {
-  const { rl, model, player, maxOutputTokens } = config;
+  const { rl, model, player, maxOutputTokens, comlinkBaseUrl } = config;
 
   // --- Step 1: モード・目的選択 ---
   const selection = await selectModeAndPurpose(rl);
@@ -184,8 +181,22 @@ export async function runChatSession(config: ChatSessionConfig): Promise<void> {
     "\n💬 補足があれば入力してください",
   );
 
-  // --- Step 3: システムプロンプト組み立て ---
-  const systemPromptInput = buildSystemPromptInput(player, selection, userNote);
+  // --- Step 3: RotE TBデータ取得（roteモードのみ）---
+  let roteGameData: Awaited<ReturnType<typeof fetchRoteData>> | undefined;
+  if (selection.mode === "rote") {
+    process.stdout.write("\n📡 RotE TBデータを取得中...");
+    try {
+      roteGameData = await fetchRoteData(
+        comlinkBaseUrl ? { baseUrl: comlinkBaseUrl } : {},
+      );
+      process.stdout.write("\r✅ RotE TBデータ取得完了          \n");
+    } catch {
+      process.stdout.write("\r⚠️  RotE TBデータの取得に失敗しました（プレイヤーデータのみでアドバイスします）\n");
+    }
+  }
+
+  // --- Step 4: システムプロンプト組み立て ---
+  const systemPromptInput = buildSystemPromptInput(player, selection, userNote, roteGameData);
 
   // 初回ユーザーメッセージ
   const initialMessage = buildInitialUserMessage(selection);
@@ -200,7 +211,7 @@ export async function runChatSession(config: ChatSessionConfig): Promise<void> {
     ...(maxOutputTokens !== undefined && { maxOutputTokens }),
   };
 
-  // --- Step 4: 初回アドバイス生成 ---
+  // --- Step 5: 初回アドバイス生成 ---
   printDivider();
   console.log("📋 初回アドバイスを生成しています...");
   printThinking();
@@ -220,7 +231,7 @@ export async function runChatSession(config: ChatSessionConfig): Promise<void> {
 
   printExitHint();
 
-  // --- Step 5: 掘り下げチャットループ ---
+  // --- Step 6: 掘り下げチャットループ ---
   while (true) {
     printDivider();
     const userInput = await askLine(rl, "\n> ");

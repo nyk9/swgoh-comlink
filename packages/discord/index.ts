@@ -28,6 +28,7 @@ import {
 } from "./session.ts";
 import { continueChat } from "../core/advisor/client.ts";
 import { createModel, DEFAULT_PROVIDER } from "../core/advisor/providers.ts";
+import { fetchRoteData } from "../core/comlink/index.ts";
 
 // -------------------------------------------------------
 // 型定義
@@ -200,11 +201,23 @@ async function handleThreadMessage(message: Message): Promise<void> {
 // イベントハンドラー
 // -------------------------------------------------------
 
-client.once(Events.ClientReady, (readyClient) => {
+client.once(Events.ClientReady, async (readyClient) => {
   console.log(`\n✅ Discord Bot が起動しました: ${readyClient.user.tag}`);
   console.log("─".repeat(50));
   console.log("スラッシュコマンド /advice を試してみてください。");
   console.log("終了するには Ctrl+C を押してください。\n");
+
+  // 起動時に RotE TB データを事前取得してキャッシュしておく
+  // これにより最初の /advice コマンドでも待ち時間なくアドバイスが返せる
+  const comlinkUrl = process.env["COMLINK_URL"];
+  console.log("📡 RotE TBデータを事前取得中...");
+  try {
+    await fetchRoteData(comlinkUrl ? { baseUrl: comlinkUrl } : {});
+    console.log("✅ RotE TBデータのキャッシュ完了\n");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.warn(`⚠️  RotE TBデータの事前取得に失敗しました（初回 /advice 時に再試行します）\n詳細: ${message}\n`);
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

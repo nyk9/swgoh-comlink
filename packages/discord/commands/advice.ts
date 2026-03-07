@@ -19,7 +19,7 @@ import { formatPlayer, getUnitsAboveMinRelic } from "../../core/comlink/formatPl
 import { continueChat } from "../../core/advisor/client.ts";
 import { buildInitialUserMessage, buildSystemPrompt } from "../../core/advisor/prompt.ts";
 import { createModel, DEFAULT_PROVIDER } from "../../core/advisor/providers.ts";
-import { getAllRoteRequirements, getMaxRelicRequirementsMap } from "../../core/data/roteData.ts";
+import { fetchRoteData } from "../../core/comlink/index.ts";
 import type { ModeSelection, RotePurpose, ChatSystemPromptInput } from "../../core/advisor/prompt.ts";
 import { ROTE_PURPOSE_LABELS } from "../../core/advisor/prompt.ts";
 import { createSession } from "../session.ts";
@@ -235,11 +235,18 @@ export async function execute(
       return;
     }
 
-    // RotE TB 要件データの読み込み
-    const roteRequirements =
-      selection.mode === "rote" ? getAllRoteRequirements() : undefined;
-    const maxRelicRequirementsMap =
-      selection.mode === "rote" ? getMaxRelicRequirementsMap() : undefined;
+    // RotE TBデータの取得（roteモードのみ・キャッシュ済みなら即返却）
+    let roteGameData: Awaited<ReturnType<typeof fetchRoteData>> | undefined;
+    if (selection.mode === "rote") {
+      try {
+        const comlinkUrl = process.env["COMLINK_URL"];
+        roteGameData = await fetchRoteData(
+          comlinkUrl ? { baseUrl: comlinkUrl } : {},
+        );
+      } catch {
+        // 取得失敗時はプレイヤーデータのみでアドバイス続行
+      }
+    }
 
     // システムプロンプト入力データを組み立てる（セッション登録にも使い回す）
     // exactOptionalPropertyTypes 対応: undefined になり得るオプショナルフィールドは
@@ -255,8 +262,7 @@ export async function execute(
       topUnits,
       allUnitsMap: player.units,
       selection,
-      ...(roteRequirements !== undefined ? { roteRequirements } : {}),
-      ...(maxRelicRequirementsMap !== undefined ? { maxRelicRequirementsMap } : {}),
+      ...(roteGameData !== undefined ? { roteGameData } : {}),
     };
 
     // AIモデル準備
@@ -328,6 +334,43 @@ export async function execute(
 
     // [DEBUG] システムプロンプトをスレッド内に出力
     if (showPrompt) {
+      // [DEBUG] 1: RoteGameData（Comlinkキャッシュ内容）
+      if (roteGameData !== undefined) {
+        const smLines = roteGameData.specialMissions.map((sm) => {
+          const rewards =
+            sm.rewards.length > 0
+              ? sm.rewards.map((r) => `${r.itemId} x${r.quantity}`).join(", ")
+              : "なし";
+          return (
+            `[P${sm.phase}] ${sm.missionId}\n` +
+            `  必須: ${sm.mandatoryUnitIds.join(", ") || "（なし）"}\n` +
+            `  カテゴリ: ${sm.categoryIds.join(", ") || "（なし）"}\n` +
+            `  最低R: R${sm.minimumRelicLevel}  編成: ${sm.maxUnitCount}体\n` +
+            `  報酬: ${rewards}`
+          );
+        });
+
+        const zoneLines = roteGameData.zoneStarThresholds.map(
+          (z) =>
+            `${z.zoneId}: ★1=${z.thresholds[0].toLocaleString()} / ★2=${z.thresholds[1].toLocaleString()} / ★3=${z.thresholds[2].toLocaleString()}`,
+        );
+
+        const roteDataText =
+          `【スペシャルミッション (${roteGameData.specialMissions.length}件)】\n` +
+          smLines.join("\n\n") +
+          `\n\n【ゾーン星閾値 (${roteGameData.zoneStarThresholds.length}件)】\n` +
+          zoneLines.join("\n");
+
+        await thread.send(`## 🔍 [DEBUG] RoteGameData（Comlinkキャッシュ）`);
+        const roteChunks = splitMessage(roteDataText, 1900);
+        for (const chunk of roteChunks) {
+          await thread.send(chunk);
+        }
+      } else {
+        await thread.send(`## 🔍 [DEBUG] RoteGameData\n⚠️ 未取得（roteモード以外、または取得失敗）`);
+      }
+
+      // [DEBUG] 2: システムプロンプト
       const systemPrompt = buildSystemPrompt(systemPromptInput);
       // コードブロックは使わずプレーンテキストで分割する
       // （コードブロック内で分割するとDiscord側で閉じタグが欠けて表示が崩れるため）

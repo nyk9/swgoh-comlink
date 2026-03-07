@@ -10,8 +10,7 @@
  * ラベル・ガイドライン・初回ユーザーメッセージをまとめて一元管理している。
  */
 
-import type { FormattedUnit, FormattedPlayer } from "../comlink/types.ts";
-import type { UnitRequirement } from "../data/types.ts";
+import type { FormattedUnit, FormattedPlayer, RoteGameData } from "../comlink/types.ts";
 
 // -------------------------------------------------------
 // 型定義
@@ -59,10 +58,11 @@ export interface ChatSystemPromptInput {
   selection: ModeSelection;
   /** ユーザーが入力した自由記述の補足（任意） */
   userNote?: string;
-  /** RotE TBの要件一覧（手動JSONから。空でも可） */
-  roteRequirements?: UnitRequirement[];
-  /** RotE TBの最大レリック要件Map（ユニットID → 最大必要レリックレベル） */
-  maxRelicRequirementsMap?: Map<string, number>;
+  /**
+   * Comlinkから取得したRotE TBゲームデータ（任意）
+   * 指定された場合はSM要件・星閾値をプロンプトに含める
+   */
+  roteGameData?: RoteGameData;
 }
 
 // -------------------------------------------------------
@@ -133,6 +133,7 @@ const ROTE_PURPOSE_CONFIG: Record<
       "## スペシャルミッション（SM）について",
       "- SMクリアはTPには直接寄与しないが、Mk2/Mk3ギルドイベントトークンやRevaのかけら等の追加報酬を獲得できる",
       "- SMは特定キャラ・特定レリックレベルが必要な編成縛りがある",
+      "- SMクリア報酬はギルドメンバー全員に配られる（1人がクリアするたびに全員が受け取る）",
       "",
       "## アドバイスの出し方",
       "- 育成候補キャラについて、以下の3軸でのギルド貢献度を評価し、総合的なおすすめ優先順位を示すこと:",
@@ -171,65 +172,77 @@ function formatTopUnits(topUnits: FormattedUnit[]): string {
 }
 
 /**
- * RotE TB 要件達成状況テキストを生成する
+ * RotE TB スペシャルミッション要件達成状況テキストを生成する
+ *
+ * roteGameData.specialMissions を走査し、
+ * 各SMについて「クリア可能か・何が足りないか」をプレイヤーデータと照合する。
  */
-function formatRoteStatus(
+function formatRoteSmStatus(
   allUnitsMap: FormattedPlayer["units"],
-  maxRelicRequirementsMap: Map<string, number>,
+  roteGameData: RoteGameData,
 ): string {
-  if (maxRelicRequirementsMap.size === 0) {
-    return "  （RotE TB要件データ未入力。R5以上キャラを元にアドバイスしてください）";
+  const { specialMissions } = roteGameData;
+
+  if (specialMissions.length === 0) {
+    return "  （SMデータ未取得）";
   }
 
   const lines: string[] = [];
-  const notReady: string[] = [];
-  const ready: string[] = [];
 
-  for (const [unitId, requiredRelic] of maxRelicRequirementsMap) {
-    // isAny フラグ相当のエントリ（"Any"・"Any Jedi" 等）はスキップ
-    // これらは特定キャラではなく属性縛りの任意枠のため達成状況は表示しない
-    if (unitId === "Any" || unitId.startsWith("Any ")) {
-      continue;
+  for (const sm of specialMissions) {
+    const phaseLabel = `P${sm.phase}`;
+    const rewardSummary =
+      sm.rewards.length > 0
+        ? sm.rewards.map((r) => `${r.itemId} x${r.quantity}`).join(", ")
+        : "追加報酬なし";
+
+    // 必須キャラの充足チェック
+    const missingUnits: string[] = [];
+    const insufficientRelic: string[] = [];
+    const okUnits: string[] = [];
+
+    for (const unitId of sm.mandatoryUnitIds) {
+      const unit = allUnitsMap.get(unitId);
+      if (unit === undefined) {
+        missingUnits.push(`${unitId}（未所持）`);
+        continue;
+      }
+      if (unit.gearLevel < 13) {
+        insufficientRelic.push(
+          `${unitId}（Gear${unit.gearLevel} - Gear13未到達）`,
+        );
+        continue;
+      }
+      if (unit.relicLevel < sm.minimumRelicLevel) {
+        const deficit = sm.minimumRelicLevel - unit.relicLevel;
+        insufficientRelic.push(
+          `${unitId}（R${unit.relicLevel} → R${sm.minimumRelicLevel} 必要、あと${deficit}不足）`,
+        );
+        continue;
+      }
+      okUnits.push(`${unitId}（R${unit.relicLevel} ✓）`);
     }
 
-    const unit = allUnitsMap.get(unitId);
-    const currentRelic = unit?.relicLevel ?? 0;
-    const currentGear = unit?.gearLevel ?? 0;
+    // カテゴリ縛り（mandatoryUnitIds が空でカテゴリのみの場合）
+    const categoryNote =
+      sm.mandatoryUnitIds.length === 0 && sm.categoryIds.length > 0
+        ? `カテゴリ縛り: [${sm.categoryIds.join(", ")}]`
+        : "";
 
-    // 未所持
-    if (unit === undefined) {
-      notReady.push(`  ✗ ${unitId}: 未所持 → Relic${requiredRelic} 必要`);
-      continue;
-    }
+    const isReady =
+      missingUnits.length === 0 && insufficientRelic.length === 0;
+    const statusIcon = isReady ? "✅" : "❌";
 
-    // Gear13未満はレリック解放不可
-    if (currentGear < 13) {
-      notReady.push(
-        `  ✗ ${unitId}: Gear${currentGear}（Gear13未到達のためレリック不可）→ Relic${requiredRelic} 必要`,
-      );
-      continue;
-    }
-
-    // Gear13以上：レリックレベルで判定
-    const currentStatus = `Relic${currentRelic}`;
-    if (currentRelic >= requiredRelic) {
-      ready.push(`  ✓ ${unitId}: ${currentStatus} (要件: Relic${requiredRelic})`);
-    } else {
-      const deficit = requiredRelic - currentRelic;
-      notReady.push(
-        `  ✗ ${unitId}: ${currentStatus} → Relic${requiredRelic} 必要（あと${deficit}不足）`,
-      );
-    }
-  }
-
-  if (notReady.length > 0) {
-    lines.push("【要件未達】");
-    lines.push(...notReady);
-  }
-  if (ready.length > 0) {
-    lines.push("");
-    lines.push("【要件達成済み】");
-    lines.push(...ready);
+    lines.push(
+      `${statusIcon} [${phaseLabel}] ${sm.missionId}  最低R: R${sm.minimumRelicLevel}  編成: ${sm.maxUnitCount}体  報酬: ${rewardSummary}`,
+    );
+    if (categoryNote) lines.push(`     ${categoryNote}`);
+    if (missingUnits.length > 0)
+      lines.push(`     未所持: ${missingUnits.join(", ")}`);
+    if (insufficientRelic.length > 0)
+      lines.push(`     レリック不足: ${insufficientRelic.join(", ")}`);
+    if (okUnits.length > 0)
+      lines.push(`     達成済み必須: ${okUnits.join(", ")}`);
   }
 
   return lines.join("\n");
@@ -265,7 +278,7 @@ function formatPurposeGuidelines(selection: ModeSelection): string {
  * チャットセッション全体で使うシステムプロンプトを組み立てる
  *
  * セッション開始時に1回だけ呼ばれる。
- * プレイヤー情報・目的・手動JSONデータを全て埋め込み、
+ * プレイヤー情報・目的・Comlinkから取得したRotEデータを全て埋め込み、
  * 以降の会話の土台となる文脈を提供する。
  *
  * @param input - システムプロンプト生成に必要なデータ
@@ -284,20 +297,19 @@ export function buildSystemPrompt(input: ChatSystemPromptInput): string {
     allUnitsMap,
     selection,
     userNote,
-    roteRequirements,
-    maxRelicRequirementsMap,
+    roteGameData,
   } = input;
 
   const topUnitsText = formatTopUnits(topUnits);
   const selectionLabel = formatSelectionLabel(selection);
   const purposeGuidelines = formatPurposeGuidelines(selection);
 
-  const roteStatusText =
-    selection.mode === "rote" && maxRelicRequirementsMap != null
-      ? formatRoteStatus(allUnitsMap, maxRelicRequirementsMap)
+  const roteSmStatusText =
+    selection.mode === "rote" && roteGameData != null
+      ? formatRoteSmStatus(allUnitsMap, roteGameData)
       : null;
 
-  const requirementsCount = roteRequirements?.length ?? 0;
+  const smCount = roteGameData?.specialMissions.length ?? 0;
 
   return `
 あなたはStar Wars: Galaxy of Heroes（SWGoH）の育成アドバイザーです。
@@ -322,10 +334,10 @@ ${userNote ? `\n補足: ${userNote}` : ""}
 ${topUnitsText}
 
 ${
-  roteStatusText != null
-    ? `## RotE TB 要件達成状況（要件データ件数: ${requirementsCount}件）
+  roteSmStatusText != null
+    ? `## RotE TB スペシャルミッション要件達成状況（全${smCount}件）
 
-${roteStatusText}
+${roteSmStatusText}
 `
     : ""
 }
@@ -334,7 +346,7 @@ ${roteStatusText}
 ${purposeGuidelines}
 - 上記のキャラクター実データを必ず参照してアドバイスすること
 - 「今のプレイヤーの状況」に基づいた具体的なキャラクター名を挙げること
-- RotE TB要件データが空の場合でも、育成状況から推測してアドバイスすること
+- RotE TBデータが取得できていない場合でも、育成状況から推測してアドバイスすること
 - 育成の優先順位を明確にすること（なぜそのキャラが優先かも説明する）
 - 短期（次のTBまで）・中期（2〜3ヶ月）の目標を分けて考えること
 - プレイヤーからの追加質問には、前の会話の文脈を踏まえて答えること

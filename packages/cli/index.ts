@@ -111,7 +111,13 @@ async function main(): Promise<void> {
     console.log("─".repeat(50));
 
     // Step 5: チャットセッション開始
-    await runChatSession({ rl, model, player });
+    const comlinkBaseUrl = process.env["COMLINK_URL"];
+    await runChatSession({
+      rl,
+      model,
+      player,
+      ...(comlinkBaseUrl ? { comlinkBaseUrl } : {}),
+    });
   } catch (error: unknown) {
     if (error instanceof Error) {
       printError(error.message);
