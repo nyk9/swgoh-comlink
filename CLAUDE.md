@@ -71,12 +71,58 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 
 ## データソース
 
-| データ                                                 | 取得方法                                         | 備考                                    |
-| ------------------------------------------------------ | ------------------------------------------------ | --------------------------------------- |
-| プレイヤーのキャラ育成状況（レリック数等）             | Comlink `/player` endpoint                       |                                         |
-| スペシャルミッション・属性限定戦闘ミッションの編成要件 | Comlink `territoryBattleDefinition` + `campaign` | `rote-special-missions.json` で統合管理 |
-| 小隊（Platoon）に必要なキャラ一覧                      | **手動JSON管理**                                 | サーバー側管理のためComlinkでは取得不可 |
-| アドバイス生成                                         | AI API（Google Gemini / Anthropic Claude）       |                                         |
+| データ                                                 | 取得方法                                                   | 備考                                    |
+| ------------------------------------------------------ | ---------------------------------------------------------- | --------------------------------------- |
+| プレイヤーのキャラ育成状況（レリック数等）             | Comlink `/player` endpoint                                 |                                         |
+| スペシャルミッション・属性限定戦闘ミッションの編成要件 | Comlink `territoryBattleDefinition` + `campaign`           | `rote-special-missions.json` で統合管理 |
+| 小隊（Platoon）に必要なキャラ一覧                      | **手動JSON管理**                                           | サーバー側管理のためComlinkでは取得不可 |
+| GL イベント（Jabba等）の参加条件・Tier 要件            | Comlink `/data segment:4` → `campaign > EVENTS > GALACTIC` | ✨ NEW: 自動取得・自動判定機能実装済み  |
+| アドバイス生成                                         | AI API（Google Gemini / Anthropic Claude）                 |                                         |
+
+---
+
+## Galactic Legend (GL) イベント対応
+
+### 実装済み機能（2025-01）
+
+**Comlink から全 GL イベント情報を自動取得・判定する機能を実装しました。**
+
+対応している GL イベント（全10種類）:
+
+- **Jabba the Hutt** (5 Tier)
+- **Rey** (6 Tier)
+- **Kylo Ren** (6 Tier)
+- **Luke Skywalker** (6 Tier)
+- **Sith Eternal Emperor** (6 Tier)
+- **Kenobi** (6 Tier)
+- **Darth Vader** (6 Tier)
+- **Leia Organa** (6 Tier)
+- **Ahsoka Tano** (6 Tier)
+- **Hondo Ohnaka** (6 Tier)
+
+### 取得できるデータ
+
+各 GL イベントの Tier ごとに以下の情報を Comlink から自動抽出：
+
+- **必須キャラ** (mandatoryUnitIds)
+- **参加可能なカテゴリタグ** (categoryIds)
+- **最低スター数**
+- **最低レリックレベル**
+- **編成人数の制限** (最小・最大)
+
+### AIアドバイスへの活用予定
+
+現在実装済みのデータ取得・判定機能を、adviser システムプロンプトに組み込むことで：
+
+- 「Jabba GL を解放するには何が足りないか」を自動判定
+- プレイヤーの現状に応じた育成優先順位をアドバイス
+- 他の GL イベントへも同様に対応
+
+### 技術詳細
+
+- `parseGLEventData()` : Comlink データから GL イベント要件を抽出
+- `fetchGLEventData()` : GL イベント情報を取得（キャッシュ付き）
+- `checkGLEventRequirements()` : プレイヤーのクリア可能状況を判定
 
 ---
 
@@ -146,9 +192,15 @@ swgoh-comlink/
 ├── packages/                    # 本番コード
 │   ├── core/                    # 共通ロジック（CLI・Web・Discord共通）
 │   │   ├── comlink/
-│   │   │   ├── client.ts        # ComlinkへのHTTPリクエスト
-│   │   │   ├── formatPlayer.ts  # プレイヤーデータ整形・GP上位N件抽出
-│   │   │   ├── types.ts         # 型定義
+│   │   │   ├── client.ts                      # ComlinkへのHTTPリクエスト
+│   │   │   ├── formatPlayer.ts                # プレイヤーデータ整形・GP上位N件抽出
+│   │   │   ├── fetchGameData.ts               # /data segment取得（segment:2,4）
+│   │   │   ├── fetchRoteData.ts               # RotE TBデータ取得（キャッシュ付き）
+│   │   │   ├── fetchGLEventData.ts            # GL イベントデータ取得（キャッシュ付き）✨ NEW
+│   │   │   ├── parseRoteData.ts               # RotE TBデータパーサー
+│   │   │   ├── parseGLEventData.ts            # GL イベントデータパーサー ✨ NEW
+│   │   │   ├── checkGLEventRequirements.ts    # GL イベント参加条件判定 ✨ NEW
+│   │   │   ├── types.ts                       # 型定義
 │   │   │   └── index.ts
 │   │   ├── advisor/
 │   │   │   ├── client.ts        # AI呼び出し（continueChat・会話履歴対応）
