@@ -21,6 +21,7 @@ import { buildInitialUserMessage, buildSystemPrompt } from "../../core/advisor/p
 import { createModel, DEFAULT_PROVIDER } from "../../core/advisor/providers.ts";
 import { getAllRoteRequirements, getMaxRelicRequirementsMap } from "../../core/data/roteData.ts";
 import type { ModeSelection, RotePurpose, ChatSystemPromptInput } from "../../core/advisor/prompt.ts";
+import { ROTE_PURPOSE_LABELS } from "../../core/advisor/prompt.ts";
 import { createSession } from "../session.ts";
 
 // -------------------------------------------------------
@@ -53,10 +54,10 @@ export const data = new SlashCommandBuilder()
       .setDescription("目的（mode=rote のときのみ有効）")
       .setRequired(false)
       .addChoices(
-        { name: "小隊配置 (Platoon)", value: "platoon" },
-        { name: "通常戦闘ミッション", value: "combat_mission" },
-        { name: "スペシャルミッション", value: "special_mission" },
-        { name: "ギルド報酬の向上", value: "gp" },
+        { name: ROTE_PURPOSE_LABELS.platoon,         value: "platoon"        },
+        { name: ROTE_PURPOSE_LABELS.combat_mission,  value: "combat_mission" },
+        { name: ROTE_PURPOSE_LABELS.special_mission, value: "special_mission" },
+        { name: ROTE_PURPOSE_LABELS.guild_rewards,   value: "guild_rewards"  },
       )
   )
   .addBooleanOption((option) =>
@@ -119,7 +120,7 @@ function buildModeSelection(
       "platoon",
       "combat_mission",
       "special_mission",
-      "gp",
+      "guild_rewards",
     ];
     const resolvedPurpose: RotePurpose =
       purpose != null && (validPurposes as string[]).includes(purpose)

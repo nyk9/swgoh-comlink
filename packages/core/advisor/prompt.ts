@@ -5,6 +5,9 @@
  * - buildSystemPrompt: セッション開始時に1回だけ組み立てるシステムプロンプト
  *   プレイヤー情報・目的・手動JSONデータを全て埋め込む
  * - 会話履歴は呼び出し元（client.ts）が管理する
+ *
+ * purposeの追加・変更は ROTE_PURPOSE_CONFIG だけを編集すればよい。
+ * ラベル・ガイドライン・初回ユーザーメッセージをまとめて一元管理している。
  */
 
 import type { FormattedUnit, FormattedPlayer } from "../comlink/types.ts";
@@ -22,7 +25,7 @@ export type RotePurpose =
   | "platoon"
   | "combat_mission"
   | "special_mission"
-  | "gp";
+  | "guild_rewards";
 
 /** 選択されたモードと目的 */
 export type ModeSelection =
@@ -63,11 +66,73 @@ export interface ChatSystemPromptInput {
 }
 
 // -------------------------------------------------------
+// RotE purpose 一元定義
+// -------------------------------------------------------
+
+/**
+ * RotE TB の各目的（purpose）に対応する定義オブジェクト。
+ *
+ * 新しい purpose を追加・変更する場合はここだけ編集すればよい。
+ * - label:          選択UIや「今回の目的」セクションに表示する日本語ラベル
+ * - guidelines:     システムプロンプトの「アドバイスの方針」に追加する目的固有の指示
+ * - initialMessage: セッション開始時にAIへ送る最初のユーザーメッセージ
+ */
+const ROTE_PURPOSE_CONFIG: Record<
+  RotePurpose,
+  { label: string; guidelines: string[]; initialMessage: string }
+> = {
+  platoon: {
+    label: "小隊配置（Platoon）の最大化",
+    guidelines: [
+      "- 今回の目的は**小隊配置（Platoon）の最大化**である",
+      "- 小隊に必要なキャラクターを優先して育てることを軸にアドバイスすること",
+      "- 小隊充足率を上げることにフォーカスし、それ以外の観点（ミッション強化等）は参考程度に留めること",
+    ],
+    initialMessage:
+      "私のキャラクター育成状況を踏まえて、RotE TBの小隊配置（Platoon）を最大化するための育成アドバイスをしてください。優先的に育てるべきキャラクターのトップ5と、その理由を教えてください。",
+  },
+
+  combat_mission: {
+    label: "通常戦闘ミッションへの貢献",
+    guidelines: [
+      "- 今回の目的は**通常戦闘ミッションへの貢献**である",
+      "- RotE TBの通常ミッションで使える編成を強化することを軸にアドバイスすること",
+      "- ミッション貢献度を上げることにフォーカスし、それ以外の観点（小隊充足等）は参考程度に留めること",
+    ],
+    initialMessage:
+      "私のキャラクター育成状況を踏まえて、RotE TBの通常戦闘ミッションに貢献するための育成アドバイスをしてください。今すぐ使える編成と、今後育てるべきキャラクターを教えてください。",
+  },
+
+  special_mission: {
+    label: "スペシャルミッションのクリア",
+    guidelines: [
+      "- 今回の目的は**スペシャルミッションのクリア**である",
+      "- スペシャルミッションに必要なキャラクターと必要レリックを満たすことを軸にアドバイスすること",
+      "- ミッション解放・クリア条件の達成にフォーカスし、それ以外の観点（小隊充足等）は参考程度に留めること",
+    ],
+    initialMessage:
+      "私のキャラクター育成状況を踏まえて、RotE TBのスペシャルミッションをクリアするための育成アドバイスをしてください。どのミッションが達成可能で、何を育てれば次のミッションが解放されるか教えてください。",
+  },
+
+  guild_rewards: {
+    label: "ギルド報酬の向上",
+    guidelines: [
+      "- 今回の目的は**ギルド報酬の向上**である",
+      "- ギルド報酬はRotE TBの総スコア（星数・ミッション完了数・小隊充足率）によって決まる",
+      "- ギルド全体のTBスコアに最も貢献できる育成を、小隊配置・ミッション参加・スペシャルミッション解放の3軸でトータルに提案すること",
+      "- 「個人のGP」や「GP向上」を目的として言及しないこと",
+    ],
+    initialMessage:
+      "私のキャラクター育成状況を踏まえて、RotE TBでのギルド報酬を向上させるための育成アドバイスをしてください。小隊配置・ミッション参加・スペシャルミッション解放の3軸でギルド全体のスコアアップにつながる優先育成キャラクターを教えてください。",
+  },
+};
+
+// -------------------------------------------------------
 // ユーティリティ
 // -------------------------------------------------------
 
 /**
- * GP上位ユニット一覧をプロンプト用テキストに変換する
+ * ユニット一覧をプロンプト用テキストに変換する
  */
 function formatTopUnits(topUnits: FormattedUnit[]): string {
   if (topUnits.length === 0) {
@@ -97,7 +162,6 @@ function formatRoteStatus(
   }
 
   const lines: string[] = [];
-
   const notReady: string[] = [];
   const ready: string[] = [];
 
@@ -114,9 +178,7 @@ function formatRoteStatus(
 
     // 未所持
     if (unit === undefined) {
-      notReady.push(
-        `  ✗ ${unitId}: 未所持 → Relic${requiredRelic} 必要`,
-      );
+      notReady.push(`  ✗ ${unitId}: 未所持 → Relic${requiredRelic} 必要`);
       continue;
     }
 
@@ -130,7 +192,6 @@ function formatRoteStatus(
 
     // Gear13以上：レリックレベルで判定
     const currentStatus = `Relic${currentRelic}`;
-
     if (currentRelic >= requiredRelic) {
       ready.push(`  ✓ ${unitId}: ${currentStatus} (要件: Relic${requiredRelic})`);
     } else {
@@ -155,17 +216,11 @@ function formatRoteStatus(
 }
 
 /**
- * 選択されたモード・目的を日本語テキストに変換する
+ * 選択されたモード・目的を「今回の目的」セクション用テキストに変換する
  */
-function formatSelection(selection: ModeSelection): string {
+function formatSelectionLabel(selection: ModeSelection): string {
   if (selection.mode === "rote") {
-    const purposeLabels: Record<RotePurpose, string> = {
-      platoon: "小隊配置（Platoon）の最大化",
-      combat_mission: "通常戦闘ミッションへの貢献",
-      special_mission: "スペシャルミッションのクリア",
-      gp: "ギルド報酬の向上",
-    };
-    return `Rise of the Empire TB / ${purposeLabels[selection.purpose]}`;
+    return `Rise of the Empire TB / ${ROTE_PURPOSE_CONFIG[selection.purpose].label}`;
   }
   if (selection.mode === "tw") {
     return "テリトリーウォー（TW）";
@@ -173,51 +228,13 @@ function formatSelection(selection: ModeSelection): string {
   return "グランドアリーナ（GAC）";
 }
 
-// -------------------------------------------------------
-// purpose別アドバイス方針ガイドライン
-// -------------------------------------------------------
-
 /**
- * 選択されたpurposeに応じたアドバイス方針の追加指示を返す
- *
- * AIが「GP向上」という誤った文脈でアドバイスしないよう、
- * purposeごとに何を軸に話すべきかを明示する。
+ * 選択されたpurposeに応じたアドバイス方針ガイドラインを返す
+ * rote 以外のモードでは空文字を返す
  */
-function buildPurposeGuidelines(selection: ModeSelection): string {
+function formatPurposeGuidelines(selection: ModeSelection): string {
   if (selection.mode !== "rote") return "";
-
-  switch (selection.purpose) {
-    case "platoon":
-      return [
-        "- 今回の目的は**小隊配置（Platoon）の最大化**である",
-        "- 小隊に必要なキャラクターを優先して育てることを軸にアドバイスすること",
-        "- 「GPを上げる」という観点は不要。あくまで小隊充足率を上げることにフォーカスすること",
-        "",
-      ].join("\n");
-    case "combat_mission":
-      return [
-        "- 今回の目的は**通常戦闘ミッションへの貢献**である",
-        "- RotE TBの通常ミッションで使える編成を強化することを軸にアドバイスすること",
-        "- 「GPを上げる」という観点は不要。ミッション貢献度を上げることにフォーカスすること",
-        "",
-      ].join("\n");
-    case "special_mission":
-      return [
-        "- 今回の目的は**スペシャルミッションのクリア**である",
-        "- スペシャルミッションに必要なキャラクターと必要レリックを満たすことを軸にアドバイスすること",
-        "- 「GPを上げる」という観点は不要。ミッション解放・クリア条件の達成にフォーカスすること",
-        "",
-      ].join("\n");
-    case "gp":
-      return [
-        "- 今回の目的は**ギルド報酬の向上**である",
-        "- ギルド報酬はRotE TBの総スコア（星数・ミッション完了数・小隊充足率）によって決まる",
-        "- 「個人のGPを上げる」ことは目的ではない。**ギルド全体のTBスコアに最も貢献できる育成**を提案すること",
-        "- 小隊配置、ミッション参加、スペシャルミッション解放の3軸でトータルに提案すること",
-        "- GP向上・GPを上げる・GP増加などの表現を使わないこと",
-        "",
-      ].join("\n");
-  }
+  return ROTE_PURPOSE_CONFIG[selection.purpose].guidelines.join("\n") + "\n";
 }
 
 // -------------------------------------------------------
@@ -252,7 +269,8 @@ export function buildSystemPrompt(input: ChatSystemPromptInput): string {
   } = input;
 
   const topUnitsText = formatTopUnits(topUnits);
-  const selectionText = formatSelection(selection);
+  const selectionLabel = formatSelectionLabel(selection);
+  const purposeGuidelines = formatPurposeGuidelines(selection);
 
   const roteStatusText =
     selection.mode === "rote" && maxRelicRequirementsMap != null
@@ -276,7 +294,7 @@ export function buildSystemPrompt(input: ChatSystemPromptInput): string {
 
 ## 今回の目的
 
-${selectionText}
+${selectionLabel}
 ${userNote ? `\n補足: ${userNote}` : ""}
 
 ## R5以上キャラクター一覧（レリック降順・全${topUnits.length}件）
@@ -293,7 +311,7 @@ ${roteStatusText}
 }
 ## アドバイスの方針
 
-${buildPurposeGuidelines(selection)}
+${purposeGuidelines}
 - 上記のキャラクター実データを必ず参照してアドバイスすること
 - 「今のプレイヤーの状況」に基づいた具体的なキャラクター名を挙げること
 - RotE TB要件データが空の場合でも、育成状況から推測してアドバイスすること
@@ -311,19 +329,18 @@ ${buildPurposeGuidelines(selection)}
  */
 export function buildInitialUserMessage(selection: ModeSelection): string {
   if (selection.mode === "rote") {
-    const purposeMessages: Record<RotePurpose, string> = {
-      platoon:
-        "私のキャラクター育成状況を踏まえて、RotE TBの小隊配置（Platoon）を最大化するための育成アドバイスをしてください。優先的に育てるべきキャラクターのトップ5と、その理由を教えてください。",
-      combat_mission:
-        "私のキャラクター育成状況を踏まえて、RotE TBの通常戦闘ミッションに貢献するための育成アドバイスをしてください。今すぐ使える編成と、今後育てるべきキャラクターを教えてください。",
-      special_mission:
-        "私のキャラクター育成状況を踏まえて、RotE TBのスペシャルミッションをクリアするための育成アドバイスをしてください。どのミッションが達成可能で、何を育てれば次のミッションが解放されるか教えてください。",
-      gp: "私のキャラクター育成状況を踏まえて、ギルド報酬を向上させるための育成アドバイスをしてください。RotE TBの小隊・ミッション両面への貢献を最大化し、ギルド全体のスコアアップにつながる優先育成キャラクターを教えてください。",
-    };
-    return purposeMessages[selection.purpose];
+    return ROTE_PURPOSE_CONFIG[selection.purpose].initialMessage;
   }
   if (selection.mode === "tw") {
     return "私のキャラクター育成状況を踏まえて、テリトリーウォー（TW）での貢献を最大化するための育成アドバイスをしてください。";
   }
   return "私のキャラクター育成状況を踏まえて、グランドアリーナ（GAC）での戦績を上げるための育成アドバイスをしてください。";
 }
+
+/**
+ * RotE TB の全 purpose のラベルを返す
+ * CLI・Discordの選択肢UI構築に使用する
+ */
+export const ROTE_PURPOSE_LABELS: Record<RotePurpose, string> = Object.fromEntries(
+  Object.entries(ROTE_PURPOSE_CONFIG).map(([key, config]) => [key, config.label]),
+) as Record<RotePurpose, string>;
