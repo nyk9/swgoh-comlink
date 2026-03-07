@@ -31,7 +31,7 @@ export const ROTE_PURPOSE_OPTIONS: SelectOption<RotePurpose>[] = [
     value: "special_mission",
   },
   {
-    label: "GP上げ全般（RotE TBへの貢献も考慮）",
+    label: "ギルド報酬の向上（小隊・ミッション両面への貢献を最大化）",
     value: "gp",
   },
 ];

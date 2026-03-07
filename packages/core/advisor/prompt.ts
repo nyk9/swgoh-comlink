@@ -163,7 +163,7 @@ function formatSelection(selection: ModeSelection): string {
       platoon: "小隊配置（Platoon）の最大化",
       combat_mission: "通常戦闘ミッションへの貢献",
       special_mission: "スペシャルミッションのクリア",
-      gp: "GP上げ全般",
+      gp: "ギルド報酬の向上",
     };
     return `Rise of the Empire TB / ${purposeLabels[selection.purpose]}`;
   }
@@ -270,7 +270,7 @@ export function buildInitialUserMessage(selection: ModeSelection): string {
         "私のキャラクター育成状況を踏まえて、RotE TBの通常戦闘ミッションに貢献するための育成アドバイスをしてください。今すぐ使える編成と、今後育てるべきキャラクターを教えてください。",
       special_mission:
         "私のキャラクター育成状況を踏まえて、RotE TBのスペシャルミッションをクリアするための育成アドバイスをしてください。どのミッションが達成可能で、何を育てれば次のミッションが解放されるか教えてください。",
-      gp: "私のキャラクター育成状況を踏まえて、GPを効率よく上げるための育成アドバイスをしてください。RotE TBへの貢献も考慮しながら、優先的に育てるべきキャラクターを教えてください。",
+      gp: "私のキャラクター育成状況を踏まえて、ギルド報酬を向上させるための育成アドバイスをしてください。RotE TBの小隊・ミッション両面への貢献を最大化し、ギルド全体のスコアアップにつながる優先育成キャラクターを教えてください。",
     };
     return purposeMessages[selection.purpose];
   }

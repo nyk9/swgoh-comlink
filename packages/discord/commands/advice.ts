@@ -56,7 +56,7 @@ export const data = new SlashCommandBuilder()
         { name: "小隊配置 (Platoon)", value: "platoon" },
         { name: "通常戦闘ミッション", value: "combat_mission" },
         { name: "スペシャルミッション", value: "special_mission" },
-        { name: "GP上げ全般", value: "gp" },
+        { name: "ギルド報酬の向上", value: "gp" },
       )
   )
   .addBooleanOption((option) =>
