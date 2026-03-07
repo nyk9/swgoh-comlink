@@ -77,6 +77,16 @@ export interface SpecialMissionSquad {
   units: SpecialMissionUnit[];
 }
 
+/**
+ * SMクリアで獲得できる報酬アイテム
+ */
+export interface SpecialMissionReward {
+  /** 報酬アイテム名（例: "ギルドイベントトークン Mk2", "Revaのかけら"） */
+  item: string;
+  /** 獲得数 */
+  amount: number;
+}
+
 export interface SpecialMission {
   missionId: string;
   missionName: string;
@@ -85,6 +95,12 @@ export interface SpecialMission {
    */
   missionType?: MissionType;
   description: string;
+  /**
+   * このSMをクリアすると獲得できる追加報酬
+   * combat_restricted ミッションには通常設定しない
+   * 省略時 = 追加報酬なし（通常TPのみ）
+   */
+  rewards?: SpecialMissionReward[];
   squads: SpecialMissionSquad[];
 }
 
