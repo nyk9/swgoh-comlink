@@ -10,7 +10,7 @@
 ### 2025 - プロジェクト方針
 
 - **目的**: SWGoHプレイヤーの育成状況からAIが育成方針をアドバイスするツール
-- **AIサービス**: Claude API（Anthropic）を使用
+- **AIサービス**: Vercel AI SDK（デフォルト: Google Gemini、`--provider anthropic` でClaude）
 - **まず**: RotE TB特化でPhase 1を作る
 - **Platoon情報**: Comlinkでは取得不可（サーバー側管理）→ 手動JSONで管理する（許容済み）
 - **生JSONをそのままAIに渡さない**: トークン上限を超えることを確認済み → 整形が必要
