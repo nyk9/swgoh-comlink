@@ -3,7 +3,7 @@
 ## プロジェクトの目的
 
 SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成状況を元に、
-今後の育成方針をAI（Claude API）がアドバイスするツールを開発する。
+今後の育成方針をVercel AI SDK経由のAI（デフォルト: Google Gemini）がアドバイスするツールを開発する。
 
 ---
 
@@ -36,7 +36,7 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
   ↓
 [手動JSON（Platoon情報等）と組み合わせ]
   ↓
-[Claude APIに投げる]
+[Vercel AI SDK経由でAI API（GoogleまたはAnthropic）に投げる]
   ↓
 [アドバイス表示]
 ```
@@ -45,12 +45,12 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 
 ## データソース
 
-| データ                                               | 取得方法                                         | 備考                                    |
-| ---------------------------------------------------- | ------------------------------------------------ | --------------------------------------- |
-| プレイヤーのキャラ育成状況（レリック数等）           | Comlink `/player` endpoint                       |                                         |
-| スペシャルミッション・コンバットミッションの編成要件 | Comlink `territoryBattleDefinition` + `campaign` |                                         |
-| 小隊（Platoon）に必要なキャラ一覧                    | **手動JSON管理**                                 | サーバー側管理のためComlinkでは取得不可 |
-| アドバイス生成                                       | Claude API                                       |                                         |
+| データ                                               | 取得方法                                         | 備考                                                                 |
+| ---------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------- |
+| プレイヤーのキャラ育成状況（レリック数等）           | Comlink `/player` endpoint                       |                                                                      |
+| スペシャルミッション・コンバットミッションの編成要件 | （未実装・将来対応予定）Comlink `territoryBattleDefinition` + `campaign` | Phase 1では未実装。Phase 2以降でComlinkから取得・整形する想定        |
+| 小隊（Platoon）に必要なキャラ一覧                    | **手動JSON管理**                                 | サーバー側管理のためComlinkでは取得不可                              |
+| アドバイス生成                                       | Vercel AI SDK（Google Gemini / Claude）          | デフォルトはGoogle Gemini（無料枠あり）。`--provider` で切替可能     |
 
 ---
 
@@ -106,13 +106,26 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 ```
 swgoh-comlink/
 ├── CLAUDE.md               # このファイル（プロジェクト概要）
+├── MEMO.md                 # 会話メモ・未決事項
 ├── README.md               # 元のComlink README
+├── package.json            # Bun workspaces設定
+├── tsconfig.json           # TypeScript設定（共通）
+├── .env.example            # 環境変数テンプレート
+├── docker-compose.yml      # Comlink等のDocker設定
+│
+├── packages/
+│   ├── core/               # 共通ロジック（CLI・Web・Discord共用）
+│   │   ├── comlink/        # ComlinkAPIクライアント・整形
+│   │   ├── advisor/        # AIアドバイス生成（Vercel AI SDK）
+│   │   └── data/           # 手動JSON管理（Platoon情報等）
+│   ├── cli/                # Phase 1: CLIアプリ
+│   ├── web/                # Phase 2: Webアプリ（未実装）
+│   └── discord/            # Phase 3: Discord bot（未実装）
+│
 ├── api-test/               # APIテスト用スクリプト（自作）
 │   ├── player.ts           # プレイヤーデータ取得テスト
 │   └── player-*.json       # ⛔️ 実際のプレイヤーデータ（閲覧禁止）
-├── installation/           # インストール手順
-├── postman/                # Postmanコレクション
-└── statCalcData/           # スタット計算データ
+└── statCalcData/           # スタット計算データ（swgoh-statsが使用）
 ```
 
 > **⛔️ 重要: `api-test/player-*.json` は実際のプレイヤーデータが含まれる実データファイルです。
@@ -129,12 +142,22 @@ swgoh-comlink/
 
 ---
 
-## 今後の次のアクション（Phase 1）
+## Phase 1 実装状況
 
-1. **手動JSONの設計** - RotE TBの小隊情報をどう構造化するか決める
-2. **プレイヤーデータの整形** - `/player` レスポンスから何を抽出するか決める
-3. **Claude APIへのプロンプト設計** - どう渡すと良いアドバイスが返るか
-4. **CLIの実装**
+### 完了済み
+
+- [x] Step 1: monorepo初期セットアップ（Bun workspaces）
+- [x] Step 2: Comlinkクライアント実装（`/player` endpoint）
+- [x] Step 3: プレイヤーデータ整形（レリックレベル算出含む）
+- [x] Step 4: RotE TB手動JSONスキーマ設計・読み込みロジック（テンプレートのみ）
+- [x] Step 5: AIアドバイス生成（Vercel AI SDK、Google Gemini / Claude切替対応）
+- [x] Step 6: CLIエントリーポイント実装
+
+### 次のアクション
+
+1. **`rote-platoons.json` の実データ投入** - 実際のRotE TBの小隊要件を手動で記入
+2. **スペシャルミッション情報のComlink取得実装** - `territoryBattleDefinition` + `campaign` から取得するロジックを実装
+3. **プロンプト改善** - 実際にアドバイスを試しながら反復改善
 
 ---
 
@@ -157,7 +180,10 @@ swgoh-comlink/
 $ docker compose up -d   # ComlinkをDockerでバックグラウンド起動
 
 # 使うたびに実行する
-$ node cli.js 445833733 --tb rote
+$ bun run packages/cli/index.ts 445833733 --tb rote
+
+# AIプロバイダーを切り替える場合（デフォルト: Google Gemini）
+$ bun run packages/cli/index.ts 445833733 --tb rote --provider anthropic
 ```
 
 CLIは「実行したら終わるプログラム」なのでサーバー起動不要。
