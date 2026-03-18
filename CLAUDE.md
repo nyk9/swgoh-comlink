@@ -3,7 +3,7 @@
 ## プロジェクトの目的
 
 SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成状況を元に、
-今後の育成方針をAI（Claude API）がアドバイスするツールを開発する。
+今後の育成方針をVercel AI SDK経由のAI（デフォルト: Google Gemini）がアドバイスするツールを開発する。
 
 ---
 
