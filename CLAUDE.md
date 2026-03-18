@@ -48,7 +48,7 @@ SWGoH（Star Wars: Galaxy of Heroes）プレイヤーのキャラクター育成
 | データ                                               | 取得方法                                         | 備考                                                                 |
 | ---------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------- |
 | プレイヤーのキャラ育成状況（レリック数等）           | Comlink `/player` endpoint                       |                                                                      |
-| スペシャルミッション・コンバットミッションの編成要件 | Comlink `territoryBattleDefinition` + `campaign` |                                                                      |
+| スペシャルミッション・コンバットミッションの編成要件 | （未実装・将来対応予定）Comlink `territoryBattleDefinition` + `campaign` | Phase 1では未実装。Phase 2以降でComlinkから取得・整形する想定        |
 | 小隊（Platoon）に必要なキャラ一覧                    | **手動JSON管理**                                 | サーバー側管理のためComlinkでは取得不可                              |
 | アドバイス生成                                       | Vercel AI SDK（Google Gemini / Claude）          | デフォルトはGoogle Gemini（無料枠あり）。`--provider` で切替可能     |
 
